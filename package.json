@@ -1,0 +1,25 @@
+{
+  "name": "pi-relay-extension",
+  "version": "0.1.0",
+  "description": "relay: a design → plan → ship SDLC workflow for the pi coding agent, with a progress footer and a fresh-context reviewer",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erraX/pi-relay-extension.git"
+  },
+  "keywords": ["pi-package", "pi", "pi-extension", "agent-skills", "workflow"],
+  "scripts": {
+    "test": "node --test 'extensions/**/*.test.ts'"
+  },
+  "pi": {
+    "extensions": ["./extensions/relay/index.ts"],
+    "subagents": {
+      "agents": ["./extensions/relay/agents"]
+    }
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "git": {
+    "base": "origin/master",
+    "branchPrefix": "feat/"
+  },
+  "verify": [],
+  "review": {
+    "maxRounds": 2
+  },
+  "models": {
+    "implementer": null,
+    "reviewer": null
+  }
+}
