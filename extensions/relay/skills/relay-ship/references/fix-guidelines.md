@@ -2,7 +2,8 @@
 
 How to act on a review report. Forked from obra/superpowers
 `skills/receiving-code-review` (MIT, https://github.com/obra/superpowers), reduced to what the fix
-pass in relay-ship needs.
+pass in relay-ship needs. The fix pass runs in a fresh implementer subagent;
+the orchestrating session asks the user and starts the next review round.
 
 Core principle: verify before implementing. The reviewer is an independent
 expert without full context; its findings are suggestions to evaluate, not
@@ -32,8 +33,10 @@ Outcomes:
 - **Wrong, with evidence**: do not change the code. Record the pushback with
   the evidence (file:line, test, documented decision) in the fix log. Technical
   reasoning, not defensiveness.
-- **Conflicts with the plan's Decisions or Global Constraints**: stop and ask
-  the user which governs, quoting the finding and the plan text. Do not pick
+- **Conflicts with the plan's Decisions or Global Constraints**: the user
+  decides which governs. Unless the task already carries the user's decision
+  for it, do not change the code; record it as `Needs user decision` in the
+  fix log, quoting the finding and the plan text, and report it. Do not pick
   silently in either direction.
 - **Cannot verify** without something you do not have: say so and leave it to
   the user.
@@ -81,7 +84,7 @@ show the feedback was heard.
 
 ## 6. Re-review
 
-Request the next review round on the updated range: same base, new head,
-previous report set to this round's file. The next reviewer confirms each
-previous Critical and Important finding is resolved and reviews the whole range
-again.
+Do not start it yourself. The orchestrator runs the next review round on the
+updated range: same base, new head, previous report set to this round's file.
+The next reviewer confirms each previous Critical and Important finding is
+resolved and reviews the whole range again.

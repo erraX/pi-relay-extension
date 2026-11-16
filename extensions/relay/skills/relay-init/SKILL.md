@@ -53,8 +53,8 @@ sensible answer.
    this repo, not a subset.
 2. **Models** — `models.reviewer` runs the fresh-context code review in
    relay-ship and deserves the strongest tier the user has; `models.implementer`
-   is used when relay-ship implements in a subagent (not in the current
-   in-session version, but configured now so the config does not change later).
+   runs the fresh implementer subagents relay-ship dispatches for each task,
+   the verification pass and the fix passes.
    Explain that `null` means "inherit the session's model", that a value is a
    provider/model id as pi shows it, and that a `:high`-style suffix sets the
    thinking level. Show the current values and accept the user's answer.

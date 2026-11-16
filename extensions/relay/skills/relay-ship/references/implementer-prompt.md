@@ -1,0 +1,203 @@
+# Implementer prompt
+
+Every piece of writing work in relay-ship runs in a fresh implementer (agent
+`relay-implementer` with pi-subagents; an equivalent fresh subagent with write
+tools elsewhere). Fill every `[PLACEHOLDER]` and send the **Common** block
+followed by exactly **one** Assignment block as the complete task.
+
+Send pointers, not content: never paste plan text, diffs, test output, review
+findings, or an earlier implementer's report into the task. The implementer
+reads the files itself; that is what keeps both its context and the
+orchestrator's small, and what makes the files, not the conversation, the
+record.
+
+The task-by-task fresh-context pattern follows mattpocock/skills
+`skills/engineering/implement-spec` (MIT, https://github.com/mattpocock/skills):
+fresh implementer per ticket, communication through context pointers.
+
+Placeholders:
+
+- `[FEATURE_DIR]` — absolute path of `.relay/YYYY-MM-DD-<slug>/`
+- `[PLAN_PATH]` — absolute path of `plan.md`
+- `[NOTES_PATH]` — `[FEATURE_DIR]/notes.md` (may not exist yet)
+- `[UNTRACKED_PATH]` — `[FEATURE_DIR]/untracked.txt`
+- `[CONFIG_PATH]` — absolute path of `.relay/config.json`
+- `[BRANCH]` — the feature branch
+- `[BASE_SHA]` — recorded in preflight
+- Task assignment: `[TASK_NUMBER]`
+- Fix assignment: `[ROUND]`, `[REPORT_PATH]` (`[FEATURE_DIR]/reviews/round-[ROUND].md`),
+  `[FIX_GUIDELINES_PATH]` (absolute path of this skill's
+  `references/fix-guidelines.md`), `[USER_DECISIONS]` (`none`, or one line per
+  finding the user has just decided, e.g. `Important 3: keep the plan's
+  behaviour`)
+
+---
+
+## Common
+
+````
+You are implementing part of an approved relay plan on branch [BRANCH]. You
+have none of the conversation that led here, and you do not need it: the files
+below are the whole context and the source of truth.
+
+## Read first
+
+1. [PLAN_PATH] — everything above `## Tasks`: Goal, Architecture, Global
+   Constraints, Decisions, Task Overview, Verification. Global Constraints and
+   Decisions bind every line you write. Below `## Tasks`, read the task your
+   assignment names; read another task only when an Interfaces line points at
+   it.
+2. [NOTES_PATH], if it exists — what earlier implementers learned: conventions,
+   working test commands, gotchas, deviations. Prefer it to guessing; prefer
+   the code to it when they disagree.
+3. [CONFIG_PATH] — the `verify` commands; the typecheck command is among them.
+4. [UNTRACKED_PATH] — files that were untracked before relay started. They are
+   someone else's work in progress: never stage, edit, move, or delete them.
+
+Earlier work is in `git log --oneline [BASE_SHA]..HEAD`. Open a commit only
+when you need its exact contract.
+
+## Repository rules
+
+- Stay on [BRANCH]. Never switch or create branches, push, amend, rebase,
+  reset, stash, or force-anything.
+- Stage by explicit path: the files your assignment created or modified,
+  nothing else. Never `git add -A`, `git add .`, `git commit -a`, or
+  `git add -f`. Before each commit, check that `git diff --cached --name-only`
+  lists only your files. `.relay/` is never committed.
+- Follow the repository's commit convention (`git log` shows it; use the
+  `commit` skill if it is available).
+- Every commit leaves the repository green: the tests covering your change and
+  the typecheck pass before you commit.
+- Improve code you touch the way a good developer would, but do not
+  restructure outside your assignment or add anything the plan did not ask
+  for.
+
+## Keep your context lean
+
+While iterating, run the focused tests, not the whole suite. Trim long output
+to what you need (the failing tests, `| tail -n 60`). Read the files the task
+names and what they lead to; do not crawl directories.
+
+## Stop and report instead of working around
+
+Stop, leave the code at your last commit plus your current attempt
+uncommitted, and report with `Status: blocked` when:
+
+- **Plan conflict** — a step cannot work as written, the plan leaves a
+  decision open, or a Global Constraint would be violated. Quote the plan
+  text and what you found in the code.
+- **Three strikes** — the same test fails with the same error three times in
+  a row. Report the failing test and its error, the three things you tried,
+  and your best guess at the cause (a wrong assumption in the plan, missing
+  context, the environment). Repeating small variations past this point makes
+  the code worse.
+- **Not your file** — the assignment needs to create or change a path listed
+  in [UNTRACKED_PATH].
+- **Out of scope** — a fix the assignment needs lies outside the plan's scope.
+
+Everything else you handle yourself, without asking.
+
+## Notes for the next implementer
+
+Before you finish, append one section to [NOTES_PATH] (create it with the
+heading `# Implementation notes` if it does not exist):
+
+```markdown
+## <Task N: name | Verification | Fix round N>
+
+- Demo: <checked: `command` → outcome | human: what to look at and where>   (task assignments only)
+- <a convention, gotcha, working command, or deviation the next implementer would otherwise rediscover>
+```
+
+At most eight bullets. No narration of what you did; `git log` has that.
+
+## Final message
+
+When the status is `blocked` or `needs-decision`, start with the report the
+rules above ask for. Then end with exactly these three lines:
+
+Status: <done | blocked | needs-decision>
+Commits: <short shas of your commits, space-separated, or none>
+Notes: [NOTES_PATH]
+````
+
+---
+
+## Assignment: task
+
+````
+## Assignment: Task [TASK_NUMBER]
+
+Implement `### Task [TASK_NUMBER]` of the plan. Steps already ticked are done
+(a previous attempt): skip them and continue from the first unticked one.
+
+- Follow the steps as written. Write the test cases the task lists as real
+  tests, run them and see them fail, implement, run them and see them pass.
+  The plan pins the contracts and describes the implementation; it does not
+  contain the code. Write the code to match the contracts and Decisions
+  exactly.
+- Check the Demo when a command or a test can show it, and record the result
+  in the step and in your notes section. A Demo only a human can check (a
+  visual, an interaction) goes into the notes as `human:`; do not claim it.
+- Tick each step (`- [ ]` → `- [x]`) in [PLAN_PATH] as you complete it. The
+  ticks are the progress record a resumed run trusts. Touch nothing else in
+  the plan.
+- Commit at least once for the task.
+
+`Status: done` means every step of Task [TASK_NUMBER] is ticked, its work is
+committed, and the working tree has no uncommitted changes to tracked files.
+````
+
+---
+
+## Assignment: verification
+
+````
+## Assignment: Verification
+
+Every task is done. Run each line of `## Verification` in [PLAN_PATH] that is
+not marked `Manual:`, in order.
+
+- A passing check: tick it and record the result next to it:
+  `— <command>: <one-line outcome>`.
+- A failing check: fix it within the plan's scope, commit the fix, and rerun
+  the check. If the fix lies outside the plan's scope, stop and report
+  (`Status: blocked`).
+- `Manual:` lines stay unticked; they are the human's.
+- If a check was already ticked by an earlier pass, run it again anyway: the
+  code may have changed since.
+
+`Status: done` means every non-manual check is ticked with a recorded passing
+result and the working tree has no uncommitted changes to tracked files.
+````
+
+---
+
+## Assignment: fix
+
+````
+## Assignment: Fix round [ROUND]
+
+The review report [REPORT_PATH] asks for fixes. Read it in full, then apply
+[FIX_GUIDELINES_PATH] to it.
+
+Decisions the user has made on findings of this round: [USER_DECISIONS]
+
+- Apply the user's decisions as stated; they override the guidelines' default
+  for those findings.
+- A finding that conflicts with the plan's Decisions or Global Constraints and
+  is not covered by the user's decisions: do not change code for it, record it
+  as `Needs user decision` in the fix log, and carry on with the others.
+- Append the fix log to [REPORT_PATH] as the guidelines describe. If the
+  report already has a fix log for this round (an earlier fix pass), append
+  your entries to it instead of starting a new one.
+- If a fix changes what a Verification check covers, rerun that check and
+  update its recorded result in [PLAN_PATH].
+- Do not start another review; the orchestrator does that.
+
+`Status: done` means every Critical and Important finding is fixed or pushed
+back with evidence and the fixes are committed. `Status: needs-decision` means
+the same, except for findings recorded as `Needs user decision`; list them
+(number and one line each) in your report.
+````

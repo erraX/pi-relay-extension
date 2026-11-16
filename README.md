@@ -1,7 +1,7 @@
 # pi-relay-extension
 
 **relay** is a personal SDLC workflow for the [pi](https://pi.dev) coding agent:
-idea → design → plan → implementation → fresh-context review → draft merge request.
+idea → design → plan → fresh-context implementation per task → fresh-context review → draft merge request.
 The workflow itself is a set of plain Agent Skills; this extension is the shell
 around them: slash commands, argument completion, a status card and a progress
 footer.
@@ -18,7 +18,7 @@ footer.
 | `/relay-grill [file]` | One-question-at-a-time interview to stress-test an idea or a relay doc; no files by default |
 | `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, Crit review) |
 | `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` of demoable vertical-slice tasks (Crit review) |
-| `/relay-ship <feature dir>` | Approved plan → implement task by task, fresh-context review, fix, verify, open a draft MR |
+| `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
 | `/relay-status` | Every feature under `.relay/` and its next step (rendered locally, never sent to the LLM) |
 
 While a plan is being implemented, the footer shows task progress and turns
@@ -30,7 +30,14 @@ two-line task strip sits below the editor:
  ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 0 reviews
 ```
 
-All artifacts (designs, plans, review reports, config) live in `.relay/` at the
+`/relay-ship` keeps its own session as a thin orchestrator: every task, the
+verification pass and every fix pass run in a fresh `relay-implementer`
+subagent, so a long plan never piles up in one context window. Implementers
+hand state to each other through files only: the plan's ticks, `git log`,
+and `notes.md` (conventions and gotchas the next implementer would otherwise
+rediscover).
+
+All artifacts (designs, plans, notes, review reports, config) live in `.relay/` at the
 repository root. It contains a `.gitignore` with `*`, so nothing relay writes is
 ever committed and the repository's own `.gitignore` is never touched.
 
@@ -50,8 +57,9 @@ pi -e git:github.com/erraX/pi-relay-extension
 
 - [pi](https://pi.dev)
 - [pi-subagents](https://www.npmjs.com/package/pi-subagents) — `/relay-ship`
-  dispatches the bundled `relay-reviewer` agent (declared via
-  `pi.subagents.agents` in `package.json`) for each review round.
+  dispatches the bundled `relay-implementer` agent for each task and fix pass
+  and the `relay-reviewer` agent for each review round (both declared via
+  `pi.subagents.agents` in `package.json`).
 - Optional: [Crit](https://crit.md/) for reviewing `design.md` / `plan.md` in
   the browser; without it you review the file directly.
 - Optional: `glab` (GitLab) or `gh` (GitHub) to open the draft merge request.
@@ -65,7 +73,8 @@ extensions/relay/
   view.ts               task chips, durations, stall levels (pure)
   *.test.ts             `npm test` (Node ≥ 22.18 for native TypeScript)
   skills/relay-*/       the workflow, plain Agent Skills registered via resources_discover
-  agents/relay-reviewer.md  fresh-context, read-only reviewer used by relay-ship
+  agents/relay-implementer.md  fresh-context implementer (one task / verification / fix pass) used by relay-ship
+  agents/relay-reviewer.md     fresh-context, read-only reviewer used by relay-ship
 ```
 
 ## Credits

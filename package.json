@@ -1,7 +1,7 @@
 {
   "name": "pi-relay-extension",
   "version": "0.1.0",
-  "description": "relay: a design → plan → ship SDLC workflow for the pi coding agent, with a progress footer and a fresh-context reviewer",
+  "description": "relay: a design → plan → ship SDLC workflow for the pi coding agent, with a progress footer, fresh-context implementers and a fresh-context reviewer",
   "type": "module",
   "license": "MIT",
   "repository": {

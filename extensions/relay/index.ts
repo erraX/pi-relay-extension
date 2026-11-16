@@ -5,7 +5,7 @@
  *   /relay-grill     one-question-at-a-time interview, no files by default
  *   /relay-design    idea → approved design.md (interview, approaches, mockups, Crit)
  *   /relay-plan      design or conversation → approved plan.md of vertical-slice tasks (Crit)
- *   /relay-ship      approved plan → implement, fresh review, fix, verify, draft MR
+ *   /relay-ship      approved plan → fresh implementer per task, verify, fresh review, fix, draft MR
  *   /relay-status    every feature under .relay/ and its next step (no LLM)
  *
  * The workflow itself lives in skills/ as plain Agent Skills (portable to other
@@ -23,11 +23,13 @@
  *     ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 0 reviews
  *
  * State comes from the plan file (ticks, status) on every refresh: session start,
- * after file-changing tool calls, when the agent settles, and every 30s while it
- * works (for the timers). Timers live in memory and restart with the session.
+ * after file-changing tool calls and subagent runs, when the agent settles, and
+ * every 30s while it works (for the timers, and for ticks an implementer
+ * subagent writes while the parent waits). Timers live in memory and restart
+ * with the session.
  *
- * The relay-reviewer agent for pi-subagents is declared in the package manifest
- * (`pi.subagents.agents`), next to these skills in agents/.
+ * The relay-implementer and relay-reviewer agents for pi-subagents are declared
+ * in the package manifest (`pi.subagents.agents`), next to these skills in agents/.
  */
 
 import { existsSync, realpathSync } from "node:fs";
@@ -59,7 +61,7 @@ const STATUS_KEY = "relay";
 const WIDGET_KEY = "relay-tasks";
 const CARD_TYPE = "relay-status";
 /** Tool calls after which plan.md may have changed (ticks, status). */
-const REFRESH_TOOLS = new Set(["edit", "write", "bash"]);
+const REFRESH_TOOLS = new Set(["edit", "write", "bash", "subagent"]);
 const REFRESH_DEBOUNCE_MS = 250;
 const TICK_MS = 30_000;
 const FOOTER_TASK_NAME_MAX = 32;
