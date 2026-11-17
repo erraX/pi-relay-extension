@@ -54,7 +54,8 @@ options and why. This is what the reviewer checks the implementation against.]
 - [ ] `npm run typecheck` — exits 0
 - [ ] `npm test` — all tests pass, output free of warnings
 - [ ] `<feature-specific command>` — <exact expected output or behaviour>
-- [ ] Manual: <what a human checks, step by step, and what they should see>
+- [ ] `npx playwright test <specs>` — the feature's browser specs pass (when the repo has Playwright)
+- [ ] Manual: <what only a human can judge, step by step, and what they should see>
 
 ---
 
@@ -91,7 +92,8 @@ per visible todo".]
 **Files:**
 - Create: `exact/path/to/new-module.ts`
 - Modify: `exact/path/to/existing.tsx` (mount the new component in the header)
-- Test: `exact/path/to/feature.integration.spec.tsx`
+- Test: `exact/path/to/todos-csv.test.ts`
+- Test: `e2e/todos-export.spec.ts` (Playwright, the repository's existing config)
 
 **Interfaces:**
 - Consumes: [what this task uses from earlier tasks — exact names and types]
@@ -101,20 +103,23 @@ per visible todo".]
   export function todosToCsv(todos: Todo[], columns: CsvColumn[]): string
   ```
 
-- [ ] **Step 1: Write the failing test** — in `feature.integration.spec.tsx`,
-  through the highest public seam (render the page, call the endpoint):
-  - with two todos, clicking Export downloads `todos.csv` with a header row and two data rows
-  - a title containing a comma is quoted: `"Buy milk, eggs"`
-  - with the list filtered to "done", only done todos are exported
-- [ ] **Step 2: Run it, expect FAIL** — `npm test -- feature.integration`
-  → fails because the Export button does not exist yet
+- [ ] **Step 1: Write the failing tests** — each at the highest seam that can
+  decide it:
+  - `e2e/todos-export.spec.ts`, through the page in a browser:
+    - with two todos, clicking Export downloads `todos.csv` with a header row and two data rows
+    - with the list filtered to "done", only done todos are exported
+  - `todos-csv.test.ts`, through `todosToCsv`:
+    - a title containing a comma is quoted: `"Buy milk, eggs"`
+- [ ] **Step 2: Run them, expect FAIL** — `npx playwright test todos-export`
+  and `npm test -- todos-csv` → fail because the Export button and
+  `todosToCsv` do not exist yet
 - [ ] **Step 3: Implement** — [what changes in each file and the decisions the
   implementer must not invent: where state lives, which existing component to
   extend, error and empty behaviour. No full implementation code.]
-- [ ] **Step 4: Run it, expect PASS** — the same command, plus
+- [ ] **Step 4: Run them, expect PASS** — the same commands, plus
   `npm run typecheck`
-- [ ] **Step 5: Demo and commit** — check the Demo line (by a command or test
-  when possible), then commit `feat(todos): <subject>`
+- [ ] **Step 5: Demo and commit** — the Playwright spec above checks the Demo;
+  record its result, then commit `feat(todos): <subject>`
 ````
 
 What belongs in a task and what does not:
@@ -128,6 +133,9 @@ What belongs in a task and what does not:
   every decision the implementer would otherwise have to guess.
 - A **prefactor** task has `**Demo:** No visible change; <named tests> stay
   green` and comes first.
+- **Every Demo names what checks it**, following "How a Demo is checked" in
+  the skill: a test, a Playwright spec for browser behaviour, or, for what
+  only a human can judge, a `Manual:` line in Verification.
 
 ## Verification rules
 
@@ -136,8 +144,11 @@ that the reviewer treats as evidence. Per-task tests do not replace it.
 
 - Start from the `verify` commands in `.relay/config.json`; add
   feature-specific checks with their exact expected result.
-- Mark checks that only a human can perform with `Manual:`. relay-ship leaves
-  them unticked and lists them when it hands over the merge request; it never
-  pretends to have done them.
+- Browser behaviour is covered by the Playwright specs the tasks add, run
+  here with the repository's Playwright command, not by `Manual:` lines.
+- Mark checks that need human judgement (look and feel, product acceptance)
+  or an environment the test runner cannot reach with `Manual:`. relay-ship
+  leaves them unticked and lists them when it hands over the merge request;
+  it never pretends to have done them.
 - Every requirement in `## Decisions` should be covered by a test case in some
   task or by a line here.

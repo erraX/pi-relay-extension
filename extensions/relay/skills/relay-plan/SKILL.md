@@ -109,6 +109,35 @@ Break the work into **tracer-bullet** tasks:
 Order tasks so the repository builds and the tests pass after every one of
 them; each task ends in a commit.
 
+**How a Demo is checked.** relay-ship runs every task in a fresh subagent and
+trusts recorded evidence, so plan each Demo to be checked by something that
+runs unattended, in this order:
+
+1. **A test at the highest seam a test can reach** (call the endpoint, render
+   the component, invoke the exported function). Most "visible" outcomes are
+   state or rendered output a test can assert: text, a class, a colour token,
+   a returned level.
+2. **Browser behaviour** (clicking, navigating, downloading, what the network
+   or console shows) **is a Playwright spec**, built on the repository's
+   existing Playwright setup: its config, fixtures, auth helpers, spec
+   directory and command. Find them while planning (`playwright.config.*`,
+   `@playwright/test` in the manifest, an `e2e/` directory) instead of
+   asking. The spec is one of the task's tests: name its path in `**Files:**`
+   and its cases in the steps, and it goes red, then green, like any other.
+   - The repository has no Playwright: adding it is a dependency decision,
+     not the implementer's. Raise it in the interview (recommend it only when
+     the feature has browser behaviour worth guarding against regressions)
+     and record the answer in `## Decisions`. Without it, test at the
+     highest seam that is available and leave only the rest to `Manual:`.
+   - The flow needs a login: use the repository's existing auth setup
+     (global setup, stored auth state). If there is none and building one is
+     outside the feature, that check becomes `Manual:` and Decisions says
+     why.
+3. **`Manual:` is the remainder**: what no test can decide. That means look
+   and feel, product acceptance, and environments the test runner cannot
+   reach (real devices, third-party accounts). Each says what to look at and
+   where.
+
 **Wide refactors are the exception to vertical slicing.** A wide refactor is
 one mechanical change (rename a column, retype a shared symbol) whose blast
 radius fans across the codebase, so no vertical slice can land green. Sequence
@@ -164,6 +193,10 @@ against it. Run this checklist yourself and fix inline; no re-review needed:
    stays under roughly 600 lines. If not, go back to the scope check.
 7. **Verification is executable**: every non-manual line has a command and an
    expected result; manual lines say exactly what to check.
+8. **Demos are checked unattended**: every Demo a test can decide has one;
+   browser behaviour has a Playwright spec when the repository has Playwright
+   (or a recorded Decision when it does not); `Manual:` holds only what needs
+   human judgement or an environment the test runner cannot reach.
 
 ## 7. Crit review
 

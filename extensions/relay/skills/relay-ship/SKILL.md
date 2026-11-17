@@ -190,7 +190,7 @@ Stop and report (do not work around) when: the plan is not approved or the
 config is missing; tracked files have uncommitted changes; no subagent
 mechanism exists; an implementer reports `blocked` (plan conflict, three
 strikes on the same failing test, a pre-existing untracked file in the way,
-a fix outside the plan's scope); an implementer's result fails the checks
+a fix outside the plan's scope, a check the environment will not let run); an implementer's result fails the checks
 twice; the review is not `Yes` after the last allowed round; opening the merge
 request fails. Review findings that need a user decision are not a stop: ask
 them in one message, wait for the answers, and continue the run. Everything
