@@ -95,6 +95,10 @@ uncommitted, and report with `Status: blocked` when:
 - **Not your file** — the assignment needs to create or change a path listed
   in [UNTRACKED_PATH].
 - **Out of scope** — a fix the assignment needs lies outside the plan's scope.
+- **Environment** — a test or check cannot run (browsers not installed, the
+  dev server will not start, a login wall) even after the repository's
+  documented setup step. Report the command and its error. Never skip the
+  check or downgrade it to a manual one instead.
 
 Everything else you handle yourself, without asking.
 
@@ -137,9 +141,16 @@ Implement `### Task [TASK_NUMBER]` of the plan. Steps already ticked are done
   The plan pins the contracts and describes the implementation; it does not
   contain the code. Write the code to match the contracts and Decisions
   exactly.
-- Check the Demo when a command or a test can show it, and record the result
-  in the step and in your notes section. A Demo only a human can check (a
-  visual, an interaction) goes into the notes as `human:`; do not claim it.
+- Check the Demo with what the plan names for it, and record the result in
+  the step and in your notes section (`checked:`). Browser behaviour
+  (clicking, navigating, downloading) is checked by a Playwright spec on the
+  repository's existing Playwright setup. If the plan names no check for a
+  browser Demo and the repository has Playwright, write the spec as part of
+  this task's tests. Never add Playwright to a repository that lacks it;
+  that is a plan decision.
+- `human:` in the notes is only for a Demo no test can decide: look and feel,
+  product acceptance, an environment the test runner cannot reach. Say what
+  to look at and where; do not claim it.
 - Tick each step (`- [ ]` → `- [x]`) in [PLAN_PATH] as you complete it. The
   ticks are the progress record a resumed run trusts. Touch nothing else in
   the plan.

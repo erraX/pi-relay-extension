@@ -34,7 +34,7 @@ Run these read-only checks and keep the results as proposed defaults:
 | Setting | How to detect |
 |---|---|
 | `git.base` | `git symbolic-ref --short refs/remotes/origin/HEAD` (strip to `origin/<branch>`). Fall back to `origin/main` or `origin/master`, whichever exists in `git branch -r`. |
-| `verify` | Scripts in `package.json` named `typecheck`, `lint`, `test` (in that order, as `npm run <name>` or the repo's package manager); otherwise Makefile targets `test`/`check`; otherwise `pytest`, `go test ./...`, `cargo test` when the matching project file exists. Propose only commands that actually exist. |
+| `verify` | Scripts in `package.json` named `typecheck`, `lint`, `test` (in that order, as `npm run <name>` or the repo's package manager), then the end-to-end command when the repo has Playwright (a `test:e2e`/`e2e` script, else `npx playwright test` when a `playwright.config.*` exists); otherwise Makefile targets `test`/`check`; otherwise `pytest`, `go test ./...`, `cargo test` when the matching project file exists. Propose only commands that actually exist. |
 | `git.branchPrefix` | Keep the current config value, else `feat/`. |
 
 Load the remaining defaults from `assets/defaults.json` in this skill's
