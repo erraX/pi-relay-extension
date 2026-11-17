@@ -166,7 +166,9 @@ Each round `N` (starting at 1):
    --draft` on GitHub). Besides the normal summary, include a short relay
    section in the description: review rounds and final verdict, deferred
    Minor findings, the `Manual:` verification items still open, and the
-   demos only a human can check (the `human:` lines in `notes.md`).
+   demos only a human can check (the `human:` lines in `notes.md`). Any
+   diagram in the description is a Mermaid block following
+   `../relay-design/references/diagrams.md`, never ASCII art.
 4. Write `mr: <url>` and `status: in-review` into the plan frontmatter.
 
 Never merge, never force-push, never mark the MR ready; those are the user's

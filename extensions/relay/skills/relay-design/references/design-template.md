@@ -51,6 +51,18 @@ handling, and testing strategy for the chosen approach. For each unit: what it
 does, how it is used, what it depends on. Prefer the existing patterns of the
 codebase and name the files or modules involved.
 
+When a picture helps (components and their calls, a request across
+processes, a state machine), draw it as a Mermaid block following
+`references/diagrams.md`, never as ASCII art:
+
+```mermaid
+sequenceDiagram
+  participant ui as Browser
+  participant api as API
+  ui->>api: POST /todos/export
+  api-->>ui: todos.csv
+```
+
 ## UI
 
 Only when the feature has a visual component. Link each mockup in

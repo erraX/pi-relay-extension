@@ -74,6 +74,10 @@ short kebab-case slug) and write `design.md` following
 `.relay/.gitignore` containing `*` first so nothing here can be committed, and
 tell the user to run `/relay-init` before shipping.
 
+Draw architecture, data flow, request sequences and state machines as Mermaid
+blocks following `references/diagrams.md`; never as ASCII or box-drawing art,
+which Crit renders misaligned.
+
 Then review the document with fresh eyes and fix problems inline, without
 asking:
 
@@ -84,6 +88,8 @@ asking:
    still need splitting?
 4. **Ambiguity**: a requirement that can be read two ways. Pick one and make
    it explicit.
+5. **Diagrams**: every diagram is a Mermaid block that passes the checks at
+   the end of `references/diagrams.md`; no ASCII or box-drawing art remains.
 
 ## 5. Crit review
 

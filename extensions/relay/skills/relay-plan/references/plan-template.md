@@ -22,7 +22,9 @@ mr:
 
 **Goal:** [One sentence describing what this builds]
 
-**Architecture:** [2-3 sentences about approach]
+**Architecture:** [2-3 sentences about approach. When the flow crosses several
+modules or processes, follow with one Mermaid diagram (see
+`../relay-design/references/diagrams.md`); never ASCII art.]
 
 **Tech Stack:** [Key technologies/libraries]
 

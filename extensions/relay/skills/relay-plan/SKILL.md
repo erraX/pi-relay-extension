@@ -164,6 +164,10 @@ What goes into a task:
   behaviour. Everything the implementer would otherwise have to guess.
 - **Exact paths and commands** with the expected outcome.
 
+Any diagram, in the top part or in a task, is a Mermaid block following
+`../relay-design/references/diagrams.md`. Never draw with ASCII or
+box-drawing characters: Crit renders them misaligned.
+
 These are plan failures; never write them:
 
 - "TBD", "TODO", "implement later", "fill in details"
@@ -197,6 +201,9 @@ against it. Run this checklist yourself and fix inline; no re-review needed:
    browser behaviour has a Playwright spec when the repository has Playwright
    (or a recorded Decision when it does not); `Manual:` holds only what needs
    human judgement or an environment the test runner cannot reach.
+9. **Diagrams**: every diagram is a Mermaid block that passes the checks at
+   the end of `../relay-design/references/diagrams.md`; no ASCII or
+   box-drawing art remains.
 
 ## 7. Crit review
 
