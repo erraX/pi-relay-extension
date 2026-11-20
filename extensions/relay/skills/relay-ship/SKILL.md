@@ -6,8 +6,8 @@ disable-model-invocation: true
 
 # Relay ship
 
-Take `.relay/YYYY-MM-DD-<slug>/plan.md` from `status: approved` to an open
-draft merge request. The user has already reviewed the plan; from here they
+Take the plan in `.relay/YYYY-MM-DD-<slug>/` (`plan.md` plus one file per task
+in `tasks/`) from `status: approved` to an open draft merge request. The user has already reviewed the plan; from here they
 expect to come back to an MR and a review report, not to questions. The only
 reasons to stop are listed under "Stop conditions"; "should I continue?" is
 never one of them.
@@ -19,12 +19,13 @@ subagent. The reasons:
 
 - A whole plan implemented in one context degrades: the Global Constraints
   read at the start fade, compaction drops details, and the fix pass runs when
-  the context is fullest. Each fresh implementer reads the plan and the notes
-  file and works one task in a clean window.
+  the context is fullest. Each fresh implementer reads `plan.md`, its own
+  task file and the notes file, and works one task in a clean window.
 - A reviewer that watched the code being written shares its blind spots.
 
 State moves between them through files, never through the conversation: the
-plan's ticks, `git log`, `notes.md` and the review reports. Invoking this skill
+ticks in the task files and in the plan's Verification, `git log`, `notes.md`
+and the review reports. Invoking this skill
 authorizes these subagents, run one at a time, and nothing else.
 
 ## 0. Inputs
@@ -35,37 +36,45 @@ authorizes these subagents, run one at a time, and nothing else.
 - `.relay/config.json` is required (`git.base`, `git.branchPrefix`, `verify`,
   `review.maxRounds`, `models`). If missing, stop and ask the user to run
   `/relay-init`.
-- Read the plan **down to the `## Tasks` line** only: frontmatter, Goal,
-  Task Overview, Verification. The task details are for the implementers; do
-  not load them into this session.
+- Read `plan.md`: frontmatter, Goal, Task Overview, Verification. List
+  `tasks/` for the task files (`NN-<task-slug>.md`; file-name order is plan
+  order) but do not open them: the task details are for the implementers, not
+  for this session. Whether a task is done is a grep, not a read:
+  `grep -c '^- \[ \]' <task file>` prints `0` when no step is left unticked.
 
 ## 1. Preflight
 
 Check, in order, and stop with a one-line reason on the first failure:
 
 1. `status` in the plan frontmatter is `approved` (or `implementing`, which
-   means resuming: continue at the first task with an unticked step, or at
-   the first phase below that is not done, and redo nothing that is).
-2. No uncommitted changes to tracked files:
+   means resuming: continue at the first task file with an unticked step, or
+   at the first phase below that is not done, and redo nothing that is).
+2. `tasks/` holds one file per row of the Task Overview. A plan written by an
+   older relay keeps its tasks inside `plan.md`, as `### Task N:` sections
+   under `## Tasks`, and has no `tasks/`: split it before going on. Move each
+   section verbatim, ticks included, into `tasks/NN-<task-slug>.md` with its
+   heading changed to `# Task N: <name>`, then delete the `## Tasks` section
+   from `plan.md`. Change no other wording.
+3. No uncommitted changes to tracked files:
    `git status --porcelain --untracked-files=no` is empty. Untracked files do
    not block: other tools and the user leave local files in a repo (design
    tool output, notes, scratch). They are not relay's: nobody stages, edits,
    moves, or deletes them.
-3. Branch:
+4. Branch:
    - `branch:` set in the frontmatter → check it out.
    - Otherwise, if HEAD is on the base branch: `git fetch origin`, then create
      `<git.branchPrefix><slug>` from `git.base` (slug = feature directory name
      without the date prefix).
    - Otherwise ask once: use the current branch or create a new one.
-4. Record `BASE_SHA=$(git merge-base <git.base> HEAD)`; every implementer and
+5. Record `BASE_SHA=$(git merge-base <git.base> HEAD)`; every implementer and
    every review uses it.
-5. The **pre-existing untracked list**: if `[FEATURE_DIR]/untracked.txt` does
+6. The **pre-existing untracked list**: if `[FEATURE_DIR]/untracked.txt` does
    not exist, write the paths from
    `git status --porcelain --untracked-files=all` into it, one per line (an
    empty file when there are none), and mention the count in one line. When
    resuming, keep the existing file: files a previous attempt left behind are
    not pre-existing. `.relay/` ignores itself and never appears in the list.
-6. Write `status: implementing` and `branch:` into the frontmatter.
+7. Write `status: implementing` and `branch:` into the frontmatter.
 
 ## 2. Dispatching an implementer
 
@@ -91,7 +100,7 @@ On `Status: done`, check the result cheaply before moving on:
 
 - still on the feature branch, and `git status --porcelain --untracked-files=no`
   is empty;
-- for a task: every step of that task is ticked in the plan, and
+- for a task: every step in its task file is ticked, and
   `git rev-list START_SHA..HEAD` is not empty;
 - for the verification pass: every non-manual Verification line is ticked;
 - `git diff --name-only START_SHA..HEAD` contains no path from
@@ -107,13 +116,14 @@ decision in the plan's `## Decisions` as one line ending in
 `(decided during ship)`, so later implementers and the reviewer see it, and
 dispatch a fresh implementer for the same assignment. The previous attempt's
 uncommitted changes stay in the tree only if the user says to keep them;
-otherwise ask the user to discard them first (preflight 2 applies again).
+otherwise ask the user to discard them first (preflight 3 applies again).
 
 ## 3. Implement
 
-For each task in plan order that still has an unticked step, dispatch an
-implementer with the **task** assignment and `[TASK_NUMBER]`. Tasks run
-strictly one after another; each builds on the commits of the ones before.
+For each file in `tasks/`, in file-name order, that still has an unticked
+step, dispatch an implementer with the **task** assignment and that file as
+`[TASK_PATH]`. Tasks run strictly one after another; each builds on the
+commits of the ones before.
 
 ## 4. Verify
 

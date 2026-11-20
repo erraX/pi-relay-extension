@@ -5,8 +5,8 @@ Every piece of writing work in relay-ship runs in a fresh implementer (agent
 tools elsewhere). Fill every `[PLACEHOLDER]` and send the **Common** block
 followed by exactly **one** Assignment block as the complete task.
 
-Send pointers, not content: never paste plan text, diffs, test output, review
-findings, or an earlier implementer's report into the task. The implementer
+Send pointers, not content: never paste plan or task text, diffs, test output,
+review findings, or an earlier implementer's report into the task. The implementer
 reads the files itself; that is what keeps both its context and the
 orchestrator's small, and what makes the files, not the conversation, the
 record.
@@ -19,12 +19,14 @@ Placeholders:
 
 - `[FEATURE_DIR]` — absolute path of `.relay/YYYY-MM-DD-<slug>/`
 - `[PLAN_PATH]` — absolute path of `plan.md`
+- `[TASKS_DIR]` — `[FEATURE_DIR]/tasks`
 - `[NOTES_PATH]` — `[FEATURE_DIR]/notes.md` (may not exist yet)
 - `[UNTRACKED_PATH]` — `[FEATURE_DIR]/untracked.txt`
 - `[CONFIG_PATH]` — absolute path of `.relay/config.json`
 - `[BRANCH]` — the feature branch
 - `[BASE_SHA]` — recorded in preflight
-- Task assignment: `[TASK_NUMBER]`
+- Task assignment: `[TASK_PATH]` — absolute path of the task's file,
+  `[TASKS_DIR]/NN-<task-slug>.md`
 - Fix assignment: `[ROUND]`, `[REPORT_PATH]` (`[FEATURE_DIR]/reviews/round-[ROUND].md`),
   `[FIX_GUIDELINES_PATH]` (absolute path of this skill's
   `references/fix-guidelines.md`), `[USER_DECISIONS]` (`none`, or one line per
@@ -42,11 +44,12 @@ below are the whole context and the source of truth.
 
 ## Read first
 
-1. [PLAN_PATH] — everything above `## Tasks`: Goal, Architecture, Global
-   Constraints, Decisions, Task Overview, Verification. Global Constraints and
-   Decisions bind every line you write. Below `## Tasks`, read the task your
-   assignment names; read another task only when an Interfaces line points at
-   it.
+1. [PLAN_PATH], in full — Goal, Architecture, Global Constraints, Decisions,
+   Task Overview, Verification. Global Constraints and Decisions bind every
+   line you write. The details of each task are in a file of its own in
+   [TASKS_DIR]. A task assignment names one: read it in full. Open any other
+   task file only for a contract you need and cannot find in the files you
+   were given or in the code.
 2. [NOTES_PATH], if it exists — what earlier implementers learned: conventions,
    working test commands, gotchas, deviations. Prefer it to guessing; prefer
    the code to it when they disagree.
@@ -85,8 +88,8 @@ Stop, leave the code at your last commit plus your current attempt
 uncommitted, and report with `Status: blocked` when:
 
 - **Plan conflict** — a step cannot work as written, the plan leaves a
-  decision open, or a Global Constraint would be violated. Quote the plan
-  text and what you found in the code.
+  decision open, or a Global Constraint would be violated. Quote the plan or
+  task text and what you found in the code.
 - **Three strikes** — the same test fails with the same error three times in
   a row. Report the failing test and its error, the three things you tried,
   and your best guess at the cause (a wrong assumption in the plan, missing
@@ -131,10 +134,11 @@ Notes: [NOTES_PATH]
 ## Assignment: task
 
 ````
-## Assignment: Task [TASK_NUMBER]
+## Assignment: the task in [TASK_PATH]
 
-Implement `### Task [TASK_NUMBER]` of the plan. Steps already ticked are done
-(a previous attempt): skip them and continue from the first unticked one.
+Implement the task that [TASK_PATH] describes; its heading gives the task's
+number and name. Steps already ticked are done (a previous attempt): skip
+them and continue from the first unticked one.
 
 - Follow the steps as written. Write the test cases the task lists as real
   tests, run them and see them fail, implement, run them and see them pass.
@@ -151,12 +155,13 @@ Implement `### Task [TASK_NUMBER]` of the plan. Steps already ticked are done
 - `human:` in the notes is only for a Demo no test can decide: look and feel,
   product acceptance, an environment the test runner cannot reach. Say what
   to look at and where; do not claim it.
-- Tick each step (`- [ ]` → `- [x]`) in [PLAN_PATH] as you complete it. The
-  ticks are the progress record a resumed run trusts. Touch nothing else in
-  the plan.
+- Tick each step (`- [ ]` → `- [x]`) in [TASK_PATH] as you complete it. The
+  ticks are the progress record a resumed run trusts. Apart from the ticks
+  and the recorded Demo result, change nothing in [TASK_PATH], and nothing at
+  all in [PLAN_PATH] or the other task files.
 - Commit at least once for the task.
 
-`Status: done` means every step of Task [TASK_NUMBER] is ticked, its work is
+`Status: done` means every step in [TASK_PATH] is ticked, the task's work is
 committed, and the working tree has no uncommitted changes to tracked files.
 ````
 

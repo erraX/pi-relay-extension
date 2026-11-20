@@ -17,7 +17,7 @@ footer.
 | `/relay-init` | Set up a self-ignoring `.relay/` directory and `config.json` (base branch, verify commands, review rounds, models) in the current repo |
 | `/relay-grill [file]` | One-question-at-a-time interview to stress-test an idea or a relay doc; no files by default |
 | `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, Crit review) |
-| `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` of demoable vertical-slice tasks (Crit review) |
+| `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` plus one file per demoable vertical-slice task under `tasks/` (Crit review) |
 | `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
 | `/relay-status` | Every feature under `.relay/` and its next step (rendered locally, never sent to the LLM) |
 
@@ -32,14 +32,32 @@ two-line task strip sits below the editor:
 
 `/relay-ship` keeps its own session as a thin orchestrator: every task, the
 verification pass and every fix pass run in a fresh `relay-implementer`
-subagent, so a long plan never piles up in one context window. Implementers
-hand state to each other through files only: the plan's ticks, `git log`,
-and `notes.md` (conventions and gotchas the next implementer would otherwise
-rediscover).
+subagent, so a long plan never piles up in one context window. Each task has
+its own file, so its implementer reads `plan.md` and that one file, not the
+other tasks. Implementers hand state to each other through files only: the
+ticks in the task files, `git log`, and `notes.md` (conventions and gotchas
+the next implementer would otherwise rediscover).
 
 All artifacts (designs, plans, notes, review reports, config) live in `.relay/` at the
 repository root. It contains a `.gitignore` with `*`, so nothing relay writes is
 ever committed and the repository's own `.gitignore` is never touched.
+
+```
+.relay/
+  config.json
+  2026-01-02-csv-export/
+    design.md             optional, from /relay-design
+    plan.md               goal, constraints, decisions, task overview, verification
+    tasks/
+      01-csv-encoder.md   one file per task: demo, files, interfaces, steps to tick
+      02-export-button.md
+    notes.md              what each implementer leaves for the next
+    reviews/round-1.md    review reports and fix logs
+```
+
+A plan written before tasks had their own files (`### Task N:` sections
+inside `plan.md`) still shows its progress, and `/relay-ship` splits it into
+task files before it continues.
 
 ## Install
 
@@ -69,7 +87,7 @@ pi -e git:github.com/erraX/pi-relay-extension
 ```
 extensions/relay/
   index.ts              commands (forward to the skills), completion, status card, footer, task strip
-  features.ts           reads .relay/<feature>/{design,plan}.md state (pure)
+  features.ts           reads .relay/<feature>/ state: design.md, plan.md, tasks/*.md (pure)
   view.ts               task chips, durations, stall levels (pure)
   *.test.ts             `npm test` (Node ≥ 22.18 for native TypeScript)
   skills/relay-*/       the workflow, plain Agent Skills registered via resources_discover

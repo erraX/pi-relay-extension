@@ -1,11 +1,23 @@
-# plan.md template
+# Plan template
 
-Write `.relay/YYYY-MM-DD-<slug>/plan.md` with exactly this skeleton. The
-frontmatter is relay's state. Everything above the `## Tasks` line is what the
-user reviews in Crit; the task details below it are for the implementer and
-are skimmed in review.
+A plan is one directory with two kinds of file:
 
-## Top part: what the user reviews
+```
+.relay/YYYY-MM-DD-<slug>/
+  plan.md                   what the user reviews, and what every implementer reads
+  tasks/
+    01-<task-slug>.md       one file per task, read by the implementer of that task
+    02-<task-slug>.md
+```
+
+relay-ship runs each task in a fresh subagent that reads `plan.md` and its own
+task file, and nothing of the other tasks. One file per task keeps the other
+tasks out of its context, and the steps it ticks are in a file only it writes.
+
+## plan.md: what the user reviews
+
+Write `plan.md` with exactly this skeleton. The frontmatter is relay's state.
+The user reviews this file closely in Crit and skims the task files.
 
 ````markdown
 ---
@@ -17,8 +29,9 @@ mr:
 # [Feature Name] Implementation Plan
 
 > **For agentic workers:** run `/relay-ship` on this feature directory to
-> implement this plan task by task. Steps use checkbox (`- [ ]`) syntax for
-> tracking; tick them as you complete them.
+> implement this plan task by task. Each task is one file in `tasks/`; its
+> steps use checkbox (`- [ ]`) syntax for tracking, ticked as they are
+> completed.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -58,10 +71,6 @@ options and why. This is what the reviewer checks the implementation against.]
 - [ ] `<feature-specific command>` — <exact expected output or behaviour>
 - [ ] `npx playwright test <specs>` — the feature's browser specs pass (when the repo has Playwright)
 - [ ] Manual: <what only a human can judge, step by step, and what they should see>
-
----
-
-## Tasks
 ````
 
 Frontmatter fields:
@@ -74,18 +83,27 @@ Frontmatter fields:
   branch.
 - `mr`: left empty; relay-ship fills it with the merge request URL.
 
-The Task Overview has one row per task, in the same order and with the same
-numbers as the task headings below. The relay footer and `/relay-status` read
-progress from the `### Task N:` headings and their checkboxes, so keep that
-heading form exactly.
+The Task Overview has one row per task file, with the same number and name.
+`plan.md` holds no task details: it ends with Verification.
 
-## Task structure
+## tasks/NN-<task-slug>.md: one file per task
 
 Each task is a vertical slice: a narrow but complete path through the layers it
-needs, demoable or verifiable when done. Aim for 30-50 lines per task.
+needs, demoable or verifiable when done. Aim for 30-50 lines per file.
+
+- **File name**: `NN-<task-slug>.md`, where `NN` is the task number from the
+  Task Overview, zero-padded to two digits (`01`, `02`, … `10`), and the slug
+  is the task name in short kebab-case. relay-ship runs the files in file-name
+  order.
+- **First line**: `# Task N: [Slice name]`, the same number and name.
+- The relay footer and `/relay-status` read progress from these files: the
+  number from the file name, the name from the heading, the steps from the
+  checkboxes. Keep those forms exactly, and use checkboxes for steps only.
+- When review adds, removes, or reorders a task, rename the files so the
+  numbers stay consecutive and match the Task Overview and the headings.
 
 ````markdown
-### Task N: [Slice name]
+# Task N: [Slice name]
 
 **Demo:** [What a person can see or do once this task is done, concretely:
 "On the todo list page, clicking Export downloads `todos.csv` with one row
@@ -98,7 +116,8 @@ per visible todo".]
 - Test: `e2e/todos-export.spec.ts` (Playwright, the repository's existing config)
 
 **Interfaces:**
-- Consumes: [what this task uses from earlier tasks — exact names and types]
+- Consumes: [what this task uses from earlier tasks — exact names, types and
+  paths, written out here: the implementer does not read the other task files]
 - Produces: [what later tasks rely on — exact signatures, as code:]
   ```ts
   export interface CsvColumn { key: keyof Todo; header: string }
@@ -124,7 +143,11 @@ per visible todo".]
   record its result, then commit `feat(todos): <subject>`
 ````
 
-What belongs in a task and what does not:
+What belongs in a task file and what does not:
+
+- **Everything the task needs is in its own file or in `plan.md`.** Its
+  implementer reads those two and the code. Never point at another task file
+  for content ("as in Task 2"); repeat the contract instead.
 
 - **Code is for contracts**: types, function signatures, schemas, exact strings
   and values the result must match, and the rare algorithm whose correctness is

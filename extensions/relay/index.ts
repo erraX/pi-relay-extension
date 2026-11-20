@@ -4,7 +4,7 @@
  *   /relay-init      set up .relay/ (self-ignoring) and config.json in this repo
  *   /relay-grill     one-question-at-a-time interview, no files by default
  *   /relay-design    idea → approved design.md (interview, approaches, mockups, Crit)
- *   /relay-plan      design or conversation → approved plan.md of vertical-slice tasks (Crit)
+ *   /relay-plan      design or conversation → approved plan.md + tasks/NN-*.md, one per vertical-slice task (Crit)
  *   /relay-ship      approved plan → fresh implementer per task, verify, fresh review, fix, draft MR
  *   /relay-status    every feature under .relay/ and its next step (no LLM)
  *
@@ -22,7 +22,7 @@
  *     🔨 csv-export · T4 Export button · step 3/5 · 6m
  *     ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 0 reviews
  *
- * State comes from the plan file (ticks, status) on every refresh: session start,
+ * State comes from the plan and task files (status, ticks) on every refresh: session start,
  * after file-changing tool calls and subagent runs, when the agent settles, and
  * every 30s while it works (for the timers, and for ticks an implementer
  * subagent writes while the parent waits). Timers live in memory and restart
@@ -60,7 +60,7 @@ const baseDir = dirname(fileURLToPath(import.meta.url));
 const STATUS_KEY = "relay";
 const WIDGET_KEY = "relay-tasks";
 const CARD_TYPE = "relay-status";
-/** Tool calls after which plan.md may have changed (ticks, status). */
+/** Tool calls after which plan.md or a task file may have changed (status, ticks). */
 const REFRESH_TOOLS = new Set(["edit", "write", "bash", "subagent"]);
 const REFRESH_DEBOUNCE_MS = 250;
 const TICK_MS = 30_000;

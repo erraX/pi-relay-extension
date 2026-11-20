@@ -1,22 +1,26 @@
 /**
- * Read relay feature state from `.relay/<feature>/{design,plan}.md`.
+ * Read relay feature state from `.relay/<feature>/`: `design.md`, `plan.md`
+ * and one file per task in `tasks/`.
  *
  * Pure apart from synchronous reads of the `.relay` directory, so the extension
  * (footer, task strip, /relay-status, argument completion) and the tests share
- * one parser. The skills own the file format; this reads the frontmatter, the
- * `### Task N:` sections with their checkboxes, and the `## Verification`
- * checklist, and tolerates anything it does not recognise.
+ * one parser. The skills own the file format; this reads the frontmatter and
+ * the `## Verification` checklist of the plan and the checkboxes of each
+ * `tasks/NN-<slug>.md`, and tolerates anything it does not recognise. Plans
+ * written before tasks had their own files keep them as `### Task N:` sections
+ * inside `plan.md`; those are read when there is no task file.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export const RELAY_DIR = ".relay";
+export const TASKS_DIR = "tasks";
 
 export type Task = {
-	/** Number from the heading (`### Task 3: …` → 3). */
+	/** Number from the file name (`03-export-button.md` → 3). */
 	n: number;
-	/** Heading text after the number, backticks removed. */
+	/** Heading text after `Task N:`, backticks removed. */
 	name: string;
 	/** Ticked and total checkboxes (steps) in this task. */
 	done: number;
@@ -39,7 +43,7 @@ export type Feature = {
 	verification: Checklist;
 	/** Number of `reviews/round-*.md` reports. */
 	reviews: number;
-	/** Latest mtime of design.md / plan.md / reviews, for "most recent". */
+	/** Latest mtime of design.md / plan.md / task files / reviews, for "most recent". */
 	mtimeMs: number;
 };
 
@@ -100,10 +104,34 @@ export function countChecks(text: string): Checklist {
 	return { done, total };
 }
 
+const HEADING = /^(#{1,6})\s+(.*)$/;
+const TASK_TITLE = /^Task\s+(\d+)\s*[:.\-–—]?\s*(.*)$/i;
+const TASK_FILE = /^(\d+)(?:[-_. ]+(.*?))?\.md$/i;
+const cleanName = (s: string) => s.replace(/`/g, "").trim();
+
 /**
- * Tasks are `### Task N: name` headings; a task's checkboxes run until the next
- * task heading or any `##` heading. Checkboxes under `## Verification` form the
- * verification checklist wherever that section sits in the plan.
+ * One task from `tasks/NN-<slug>.md`: the number comes from the file name (it
+ * fixes the order), the name from the first heading (`# Task 3: Export button`
+ * → `Export button`) or else from the slug, the steps from every checkbox in
+ * the file. Files not named that way are not tasks.
+ */
+export function parseTaskFile(fileName: string, text: string): Task | undefined {
+	const file = TASK_FILE.exec(fileName);
+	if (!file) return undefined;
+	let name = (file[2] ?? "").replace(/[-_]+/g, " ");
+	for (const line of proseLines(text)) {
+		const heading = HEADING.exec(line);
+		if (!heading) continue;
+		name = TASK_TITLE.exec(heading[2])?.[2] || heading[2];
+		break;
+	}
+	return { n: Number(file[1]), name: cleanName(name), ...countChecks(text) };
+}
+
+/**
+ * The plan's `## Verification` checklist, wherever that section sits, plus the
+ * tasks of a plan that still holds them inline: `### Task N: name` headings,
+ * each with the checkboxes up to the next task heading or any `##` heading.
  */
 export function parsePlan(text: string): { tasks: Task[]; verification: Checklist } {
 	const tasks: Task[] = [];
@@ -111,12 +139,12 @@ export function parsePlan(text: string): { tasks: Task[]; verification: Checklis
 	let task: Task | undefined;
 	let inVerification = false;
 	for (const line of proseLines(text)) {
-		const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+		const heading = HEADING.exec(line);
 		if (heading) {
 			const level = heading[1].length;
-			const t = level >= 3 ? /^Task\s+(\d+)\s*[:.\-–—]?\s*(.*)$/i.exec(heading[2]) : null;
+			const t = level >= 3 ? TASK_TITLE.exec(heading[2]) : null;
 			if (t) {
-				task = { n: Number(t[1]), name: t[2].replace(/`/g, "").trim(), done: 0, total: 0 };
+				task = { n: Number(t[1]), name: cleanName(t[2]), done: 0, total: 0 };
 				tasks.push(task);
 				inVerification = false;
 			} else if (level <= 2) {
@@ -145,6 +173,28 @@ function readIfExists(path: string): { text: string; mtimeMs: number } | undefin
 	}
 }
 
+/** Tasks from `<dir>/tasks/*.md` in number order. */
+function readTasks(dir: string): { tasks: Task[]; mtimeMs: number } {
+	const base = join(dir, TASKS_DIR);
+	let names: string[];
+	try {
+		names = readdirSync(base).sort();
+	} catch {
+		return { tasks: [], mtimeMs: 0 };
+	}
+	const tasks: Task[] = [];
+	let mtimeMs = 0;
+	for (const name of names) {
+		if (!TASK_FILE.test(name)) continue;
+		const file = readIfExists(join(base, name));
+		const task = file && parseTaskFile(name, file.text);
+		if (!file || !task) continue;
+		tasks.push(task);
+		mtimeMs = Math.max(mtimeMs, file.mtimeMs);
+	}
+	return { tasks: tasks.sort((a, b) => a.n - b.n), mtimeMs };
+}
+
 function countReviews(dir: string): { count: number; mtimeMs: number } {
 	const reviews = join(dir, "reviews");
 	try {
@@ -163,6 +213,7 @@ export function readFeature(dir: string, slug: string): Feature | undefined {
 	const designFm = design ? parseFrontmatter(design.text) : {};
 	const planFm = plan ? parseFrontmatter(plan.text) : {};
 	const parsed = plan ? parsePlan(plan.text) : { tasks: [], verification: { done: 0, total: 0 } };
+	const files = readTasks(dir);
 	const reviews = countReviews(dir);
 	return {
 		slug,
@@ -173,10 +224,10 @@ export function readFeature(dir: string, slug: string): Feature | undefined {
 		planStatus: planFm.status,
 		branch: planFm.branch,
 		mr: planFm.mr,
-		tasks: parsed.tasks,
+		tasks: files.tasks.length ? files.tasks : parsed.tasks,
 		verification: parsed.verification,
 		reviews: reviews.count,
-		mtimeMs: Math.max(design?.mtimeMs ?? 0, plan?.mtimeMs ?? 0, reviews.mtimeMs),
+		mtimeMs: Math.max(design?.mtimeMs ?? 0, plan?.mtimeMs ?? 0, files.mtimeMs, reviews.mtimeMs),
 	};
 }
 

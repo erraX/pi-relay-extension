@@ -8,7 +8,8 @@ that it has not seen the implementation happen.
 
 Forked from obra/superpowers `skills/requesting-code-review/code-reviewer.md`
 (MIT, https://github.com/obra/superpowers). Changes: the reviewer
-produces the diff itself, reads the relay plan as the requirements, writes its
+produces the diff itself, reads the relay plan and its task files as the
+requirements, writes its
 report to a file, checks the plan's Verification evidence, and ends with a
 machine-readable verdict line.
 
@@ -16,6 +17,7 @@ Placeholders:
 
 - `[FEATURE_DIR]` — absolute path of `.relay/YYYY-MM-DD-<slug>/`
 - `[PLAN_PATH]` — absolute path of `plan.md`
+- `[TASKS_DIR]` — `[FEATURE_DIR]/tasks`, one `NN-<task-slug>.md` per task
 - `[BASE_SHA]` — `git merge-base <git.base> HEAD`, recorded before the review
 - `[HEAD_SHA]` — `git rev-parse HEAD`, recorded before the review
 - `[ROUND]` — 1, 2, …
@@ -31,10 +33,12 @@ plan and identify issues before they reach a merge request.
 
 ## Requirements
 
-Read [PLAN_PATH] first. Its `Global Constraints`, `Decisions`, and task list
-are the requirements; its `Verification` section lists the acceptance checks
-the implementer claims to have run. Read `[FEATURE_DIR]/design.md` only if the
-plan refers to it for a decision you need to judge.
+Read [PLAN_PATH] first, then every task file in [TASKS_DIR], in file-name
+order. The plan's `Global Constraints` and `Decisions` and each task's
+contracts, test cases and Demo are the requirements; the plan's `Verification`
+section lists the acceptance checks the implementer claims to have run. Read
+`[FEATURE_DIR]/design.md` only if the plan refers to it for a decision you
+need to judge.
 
 ## Range under review
 
