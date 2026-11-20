@@ -5,6 +5,9 @@ Every piece of writing work in relay-ship runs in a fresh implementer (agent
 tools elsewhere). Fill every `[PLACEHOLDER]` and send the **Common** block
 followed by exactly **one** Assignment block as the complete task.
 
+relay-task uses the same text without a subagent: its session fills the
+Common block and the task assignment and follows them itself.
+
 Send pointers, not content: never paste plan or task text, diffs, test output,
 review findings, or an earlier implementer's report into the task. The implementer
 reads the files itself; that is what keeps both its context and the

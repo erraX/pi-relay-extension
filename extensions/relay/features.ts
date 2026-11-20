@@ -366,8 +366,9 @@ export function nextStep(f: Feature, path: string): string {
 		case "plan-draft":
 			return "approve plan.md, or review it first";
 		case "approved":
-			return `/relay-ship ${path}`;
+			return `/relay-ship ${path}  ·  by hand: /relay-task ${path}`;
 		case "implementing":
+			return `/relay-ship ${path}  (resumes at the first unticked step)  ·  by hand: /relay-task ${path}`;
 		case "reviewing":
 			return `/relay-ship ${path}  (resumes at the first unticked step)`;
 		case "in-review":

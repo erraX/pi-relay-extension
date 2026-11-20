@@ -301,7 +301,11 @@ describe("formatting", () => {
 		assert.equal(mrLabel(undefined), undefined);
 	});
 	it("suggests the next command", () => {
-		assert.equal(nextStep(approved, ".relay/2026-01-02-pi"), "/relay-ship .relay/2026-01-02-pi");
-		assert.match(nextStep(implementing, ".relay/x"), /^\/relay-ship \.relay\/x/);
+		assert.equal(nextStep(approved, ".relay/pi"), "/relay-ship .relay/pi  ·  by hand: /relay-task .relay/pi");
+		assert.match(nextStep(implementing, ".relay/x"), /^\/relay-ship \.relay\/x .*\/relay-task \.relay\/x$/);
+	});
+	it("offers only relay-ship once every task is done", () => {
+		assert.match(nextStep(review, ".relay/x"), /^\/relay-ship \.relay\/x/);
+		assert.doesNotMatch(nextStep(review, ".relay/x"), /relay-task/);
 	});
 });

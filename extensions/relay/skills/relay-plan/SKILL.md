@@ -1,6 +1,6 @@
 ---
 name: relay-plan
-description: Write a decision-complete implementation plan of demoable vertical-slice tasks into .relay/<feature>/ as plan.md plus one file per task under tasks/ (from an approved design.md, an external design brief, or the current conversation, interviewing first when decisions are still open), then ask the user whether to approve it as it is or review it in Crit first. Use when the user runs /relay-plan, or whenever a multi-step change is agreed and needs a plan before touching code. Not for executing a plan (relay-ship) and not for open-ended design exploration (relay-design).
+description: Write a decision-complete implementation plan of demoable vertical-slice tasks into .relay/<feature>/ as plan.md plus one file per task under tasks/ (from an approved design.md, an external design brief, or the current conversation, interviewing first when decisions are still open), then ask the user whether to approve it as it is or review it in Crit first. Use when the user runs /relay-plan, or whenever a multi-step change is agreed and needs a plan before touching code. Not for executing a plan (relay-ship, relay-task) and not for open-ended design exploration (relay-design).
 disable-model-invocation: true
 metadata:
   forkedFrom: "obra/superpowers skills/writing-plans (MIT, https://github.com/obra/superpowers); vertical-slice rules from mattpocock/skills skills/engineering/to-tickets (MIT, https://github.com/mattpocock/skills)"
@@ -276,6 +276,9 @@ The plan is approved when the user chose "no review" or the Crit review ended
 without unresolved feedback. Set `status: approved` in the frontmatter and
 tell the user:
 
-> Plan approved: `.relay/YYYY-MM-DD-<slug>/plan.md` (N tasks). Next: `/relay-ship .relay/YYYY-MM-DD-<slug>` to implement, review, and open the merge request.
+> Plan approved: `.relay/YYYY-MM-DD-<slug>/plan.md` (N tasks). Next, either:
+> - `/relay-ship .relay/YYYY-MM-DD-<slug>` to implement every task in a fresh subagent, review, and open the merge request; or
+> - `/relay-task .relay/YYYY-MM-DD-<slug>` in a new session per task to implement them by hand, then `/relay-ship` for the review and the merge request.
 
-Stop there. Do not start implementing.
+Stop there. Do not start implementing; how the plan is implemented is the
+user's choice between those two.

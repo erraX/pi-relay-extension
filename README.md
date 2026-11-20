@@ -1,7 +1,7 @@
 # pi-relay-extension
 
 **relay** is a personal SDLC workflow for the [pi](https://pi.dev) coding agent:
-idea → design → plan → fresh-context implementation per task → fresh-context review → draft merge request.
+idea → design → plan → fresh-context implementation per task (by subagents, or by hand one session per task) → fresh-context review → draft merge request.
 The workflow itself is a set of plain Agent Skills; this extension is the shell
 around them: slash commands, argument completion, a status card and a progress
 footer.
@@ -19,6 +19,7 @@ footer.
 | `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, Crit review) |
 | `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` plus one file per demoable vertical-slice task under `tasks/`; asks whether to review it in Crit before approving |
 | `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
+| `/relay-task <feature dir> [task]` | One task of an approved plan, implemented in the current session; then stops and names the next command |
 | `/relay-status` | Every feature under `.relay/` and its next step (rendered locally, never sent to the LLM) |
 
 While a plan is being implemented, the footer shows task progress and turns
@@ -37,6 +38,16 @@ its own file, so its implementer reads `plan.md` and that one file, not the
 other tasks. Implementers hand state to each other through files only: the
 ticks in the task files, `git log`, and `notes.md` (conventions and gotchas
 the next implementer would otherwise rediscover).
+
+Because that state is on disk, you can also implement tasks by hand:
+`/relay-task` does the next unfinished task in the current session, under the
+same rules as the subagents, and you start a new session for each task. Use
+it to watch a task being built and step in, or when pi-subagents is not
+installed. The two mix freely at task boundaries: do some tasks by hand and
+let `/relay-ship` take the rest, or the other way round. Verification, review,
+fixes and the merge request are always `/relay-ship`'s. `/relay-task` runs on
+the session's own model; `models.implementer` in the config applies to the
+subagents only.
 
 All artifacts (designs, plans, notes, review reports, config) live in `.relay/` at the
 repository root. It contains a `.gitignore` with `*`, so nothing relay writes is
@@ -77,7 +88,8 @@ pi -e git:github.com/erraX/pi-relay-extension
 - [pi-subagents](https://www.npmjs.com/package/pi-subagents) — `/relay-ship`
   dispatches the bundled `relay-implementer` agent for each task and fix pass
   and the `relay-reviewer` agent for each review round (both declared via
-  `pi.subagents.agents` in `package.json`).
+  `pi.subagents.agents` in `package.json`). `/relay-task` does not need it,
+  but the review and the merge request still go through `/relay-ship`.
 - Optional: [Crit](https://crit.md/) for reviewing `design.md` in the
   browser, and the plan when you ask for it; without it you review the file
   directly.
