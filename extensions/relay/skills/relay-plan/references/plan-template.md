@@ -91,7 +91,10 @@ The Task Overview has one row per task file, with the same number and name.
 ## tasks/NN-<task-slug>.md: one file per task
 
 Each task is a vertical slice: a narrow but complete path through the layers it
-needs, demoable or verifiable when done. Aim for 30-50 lines per file.
+needs, demoable or verifiable when done: one Demo, one commit. No line count
+applies; a task file is as long as its contracts, test cases, and decisions
+need, and every sentence in it passes the deletion test of "Write it tight"
+in the skill.
 
 - **File name**: `NN-<task-slug>.md`, where `NN` is the task number from the
   Task Overview, zero-padded to two digits (`01`, `02`, … `10`), and the slug

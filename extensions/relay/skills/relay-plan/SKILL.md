@@ -11,10 +11,9 @@ metadata:
 A relay plan has two readers, and serving both decides its shape:
 
 - **The user**, who approves it before anything is built and decides whether
-  to review it first. When they do, they must be able to read `plan.md`
-  (goal, constraints, decisions, task overview, verification) in about
-  fifteen minutes and know exactly what will be built, in what order, and how
-  it will be checked.
+  to review it first. `plan.md` (goal, constraints, decisions, task overview,
+  verification) holds what they need for that and nothing else: exactly what
+  will be built, in what order, and how it will be checked.
 - **The implementer**, an agent with full access to the codebase that may run
   on a weaker model than the one planning. It needs every decision made for
   it, exact contracts, concrete test cases, exact paths and commands, and small
@@ -69,13 +68,15 @@ design tool for UI) instead; that is a design conversation, not a planning gap.
 
 ## 2. Scope check
 
-A plan the user cannot review in one sitting is a plan that gets approved
-unread. If the work covers several independent subsystems, or `plan.md` and
-the task files together would run past roughly 600 lines, propose splitting it
-into separate features (one
-feature directory, plan, and merge request each), each producing working,
-testable software on its own. A common split: a generic layer first, then the
-first page or consumer that uses it.
+Split by content, never by length. If the work covers several independent
+subsystems, propose splitting it into separate features (one feature
+directory, plan, and merge request each), each producing working, testable
+software on its own. A common split: a generic layer first, then the first
+page or consumer that uses it.
+
+A plan that is long because the work is complex is not a reason to split, and
+no line count applies to a plan or a task file. Length is handled by how the
+plan is written ("Write it tight" in step 5), not by cutting scope.
 
 ## 3. File structure
 
@@ -104,8 +105,9 @@ Break the work into **tracer-bullet** tasks:
 - The first feature task is the tracer bullet: the thinnest path that touches
   every layer end to end, with each layer cut to the minimum. Later tasks widen
   that path one capability at a time.
-- Each task is sized to fit in a single fresh context window; its file is
-  30-50 lines.
+- Each task is one Demo and one commit, small enough to implement in a
+  single fresh context window. A task with two Demos, or whose steps serve
+  two different outcomes, is two tasks.
 - Any prefactoring comes first ("make the change easy, then make the easy
   change"), as its own task with `Demo: No visible change; <tests> stay
   green`.
@@ -170,6 +172,31 @@ What goes into a task file:
   behaviour. Everything the implementer would otherwise have to guess.
 - **Exact paths and commands** with the expected outcome.
 
+**Write it tight.** A complex feature needs a long plan, and that is fine.
+What is not fine is length that carries nothing: every extra sentence is
+read by the user and again by each implementer.
+
+- **Every sentence carries a decision, a contract, a test case, a path, or a
+  command.** The test: would the implementer do anything differently without
+  it? If not, delete it. That removes narration ("first we will…"), hedging,
+  restated template instructions, and descriptions of what the code already
+  shows.
+- **One home per fact.** Global Constraints and Decisions live in `plan.md`
+  and are not restated in task files: every implementer reads `plan.md`. The
+  reason for a decision is written once, in Decisions; steps say what to do,
+  not why. A command given in one step is "the same command" in a later one.
+- **Needing to say something twice means it is in the wrong place.** A rule
+  that binds several tasks is a Global Constraint or a Decision, stated once,
+  not a sentence in each task. The architecture is explained once, in the
+  header of `plan.md`, not again per task.
+- **Repeat only what the separate task files require.** A task's `Consumes`
+  writes out the exact names and signatures it uses from earlier tasks,
+  because its implementer does not read their files. That repetition is
+  required; never replace it with a pointer to another task. Nothing else is
+  repeated across task files.
+- **Parallel items are lists or tables, not paragraphs**: files, test cases,
+  commands, error cases. One item per line, each in the same shape.
+
 Any diagram, in `plan.md` or in a task file, is a Mermaid block following
 `../relay-design/references/diagrams.md`. Never draw with ASCII or
 box-drawing characters: Crit renders them misaligned.
@@ -203,9 +230,13 @@ re-review needed:
    later tasks match what earlier tasks define. `clearLayers()` in Task 3 and
    `clearFullLayers()` in Task 7 is a bug.
 5. **No pre-written implementation**: code blocks hold contracts only.
-6. **Size**: `plan.md` reads in about fifteen minutes and holds no task
-   details; `plan.md` and the task files together stay under roughly 600
-   lines. If not, go back to the scope check.
+6. **Tightness**: reread `plan.md` and every task file once against "Write
+   it tight". Delete each sentence that fails the deletion test; move what
+   is said twice to its one home (the signatures in `Consumes` stay); turn
+   prose that lists things into a list. `plan.md` holds no task details.
+   What is left after this pass is the feature's own length: do not cut
+   decisions, contracts, or test cases to make the plan shorter, and do not
+   propose a split because of length.
 7. **Verification is executable**: every non-manual line has a command and an
    expected result; manual lines say exactly what to check.
 8. **Demos are checked unattended**: every Demo a test can decide has one;
