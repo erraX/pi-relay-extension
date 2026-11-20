@@ -4,7 +4,7 @@ A plan is one directory with two kinds of file:
 
 ```
 .relay/YYYY-MM-DD-<slug>/
-  plan.md                   what the user reviews, and what every implementer reads
+  plan.md                   what the user approves, and what every implementer reads
   tasks/
     01-<task-slug>.md       one file per task, read by the implementer of that task
     02-<task-slug>.md
@@ -14,10 +14,11 @@ relay-ship runs each task in a fresh subagent that reads `plan.md` and its own
 task file, and nothing of the other tasks. One file per task keeps the other
 tasks out of its context, and the steps it ticks are in a file only it writes.
 
-## plan.md: what the user reviews
+## plan.md: what the user approves
 
 Write `plan.md` with exactly this skeleton. The frontmatter is relay's state.
-The user reviews this file closely in Crit and skims the task files.
+Reviewing the plan is the user's choice; when they do, this is the file they
+read, and the task files are skimmed or left out.
 
 ````markdown
 ---
@@ -75,7 +76,8 @@ options and why. This is what the reviewer checks the implementation against.]
 
 Frontmatter fields:
 
-- `status`: `draft` → `approved` (after Crit) → `implementing` → `in-review`
+- `status`: `draft` → `approved` (the user approved it, with or without a
+  Crit review) → `implementing` → `in-review`
   (merge request open) → `shipped`. relay-plan owns the first two
   transitions; relay-ship owns the rest.
 - `branch`: left empty here; relay-ship fills it when it creates the branch.
@@ -99,7 +101,7 @@ needs, demoable or verifiable when done. Aim for 30-50 lines per file.
 - The relay footer and `/relay-status` read progress from these files: the
   number from the file name, the name from the heading, the steps from the
   checkboxes. Keep those forms exactly, and use checkboxes for steps only.
-- When review adds, removes, or reorders a task, rename the files so the
+- When feedback adds, removes, or reorders a task, rename the files so the
   numbers stay consecutive and match the Task Overview and the headings.
 
 ````markdown

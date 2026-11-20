@@ -17,7 +17,7 @@ footer.
 | `/relay-init` | Set up a self-ignoring `.relay/` directory and `config.json` (base branch, verify commands, review rounds, models) in the current repo |
 | `/relay-grill [file]` | One-question-at-a-time interview to stress-test an idea or a relay doc; no files by default |
 | `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, Crit review) |
-| `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` plus one file per demoable vertical-slice task under `tasks/` (Crit review) |
+| `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` plus one file per demoable vertical-slice task under `tasks/`; asks whether to review it in Crit before approving |
 | `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
 | `/relay-status` | Every feature under `.relay/` and its next step (rendered locally, never sent to the LLM) |
 
@@ -78,8 +78,9 @@ pi -e git:github.com/erraX/pi-relay-extension
   dispatches the bundled `relay-implementer` agent for each task and fix pass
   and the `relay-reviewer` agent for each review round (both declared via
   `pi.subagents.agents` in `package.json`).
-- Optional: [Crit](https://crit.md/) for reviewing `design.md` / `plan.md` in
-  the browser; without it you review the file directly.
+- Optional: [Crit](https://crit.md/) for reviewing `design.md` in the
+  browser, and the plan when you ask for it; without it you review the file
+  directly.
 - Optional: `glab` (GitLab) or `gh` (GitHub) to open the draft merge request.
 
 ## Layout

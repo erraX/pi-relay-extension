@@ -364,7 +364,7 @@ export function nextStep(f: Feature, path: string): string {
 		case "design-approved":
 			return `/relay-plan ${path}`;
 		case "plan-draft":
-			return "review plan.md, then approve";
+			return "approve plan.md, or review it first";
 		case "approved":
 			return `/relay-ship ${path}`;
 		case "implementing":

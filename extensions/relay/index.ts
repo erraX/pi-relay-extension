@@ -4,7 +4,7 @@
  *   /relay-init      set up .relay/ (self-ignoring) and config.json in this repo
  *   /relay-grill     one-question-at-a-time interview, no files by default
  *   /relay-design    idea → approved design.md (interview, approaches, mockups, Crit)
- *   /relay-plan      design or conversation → approved plan.md + tasks/NN-*.md, one per vertical-slice task (Crit)
+ *   /relay-plan      design or conversation → approved plan.md + tasks/NN-*.md, one per vertical-slice task (Crit on request)
  *   /relay-ship      approved plan → fresh implementer per task, verify, fresh review, fix, draft MR
  *   /relay-status    every feature under .relay/ and its next step (no LLM)
  *
@@ -88,7 +88,7 @@ const WORKFLOWS: Workflow[] = [
 	{ name: "relay-init", description: "Set up .relay/ and config.json in this repo" },
 	{ name: "relay-grill", description: "Interview to stress-test an idea or a relay doc", complete: "docs" },
 	{ name: "relay-design", description: "Idea → approved design.md (interview, approaches, mockups, Crit)" },
-	{ name: "relay-plan", description: "Design or conversation → approved plan.md (Crit)", complete: "features" },
+	{ name: "relay-plan", description: "Design or conversation → approved plan.md + task files (Crit on request)", complete: "features" },
 	{ name: "relay-ship", description: "Approved plan → implement, review, fix, verify, draft MR", complete: "plans" },
 ];
 

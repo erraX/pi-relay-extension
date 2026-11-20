@@ -7,7 +7,7 @@ disable-model-invocation: true
 # Relay ship
 
 Take the plan in `.relay/YYYY-MM-DD-<slug>/` (`plan.md` plus one file per task
-in `tasks/`) from `status: approved` to an open draft merge request. The user has already reviewed the plan; from here they
+in `tasks/`) from `status: approved` to an open draft merge request. The user has approved the plan; from here they
 expect to come back to an MR and a review report, not to questions. The only
 reasons to stop are listed under "Stop conditions"; "should I continue?" is
 never one of them.
