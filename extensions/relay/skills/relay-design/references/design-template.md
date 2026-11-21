@@ -65,11 +65,29 @@ sequenceDiagram
 
 ## UI
 
-Only when the feature has a visual component. Link each mockup in
-`mockups/` and state which one was chosen:
+Only when the feature has a visual component.
+
+Mockups compared, when the design chose between layouts:
 
 - `mockups/option-a.html` — chosen: <reason>
 - `mockups/option-b.html` — rejected: <reason>
+
+One row per screen that has a visual reference. The contract, not the
+reference, is what the plan's tasks work from (see
+`references/ui-contract.md`):
+
+| Screen | Visual reference | Contract | States captured |
+|---|---|---|---|
+| Todo list | `mockups/option-a.html` | `ui/todo-list.md` | default, row menu open, filters applied, empty |
+
+Rules shared by every screen: `ui/shared.md`.
+
+Deviations from the reference that the user accepted, one line each (the
+contracts' Conversions hold the detail): "filter card radius: token radius
+instead of the reference's 8px".
+
+A screen with no visual reference is built from the component library's
+defaults; say so in one line.
 
 ## Decisions
 

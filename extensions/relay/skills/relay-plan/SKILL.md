@@ -37,11 +37,17 @@ Work out where the requirements come from:
 
 - **Argument is a feature directory or a `design.md` path**: read the design.
   Its Constraints become Global Constraints verbatim, its Decisions are the
-  spec. Reuse that directory.
+  spec, and its UI contracts under `ui/`, when it has them, are the spec of
+  each screen's layout. Reuse that directory.
 - **An external design brief or an already-built UI** (named by the user or
   earlier in the conversation, e.g. from a design tool): its decisions are
   settled. Record its path under Decisions and plan only what it leaves open;
-  do not re-decide UX it already decided.
+  do not re-decide UX it already decided. What a brief or a built UI does not
+  settle is which of its values the implementation must keep, and its path
+  alone carries none of them into a task file. For each screen it shows that
+  has no contract under `ui/` yet, distil one before slicing tasks, following
+  `../relay-design/references/ui-contract.md`; the questions that turns up
+  are interview questions (step 1).
 - **Neither** (the usual case for small and medium work): the requirements
   are the current conversation plus the codebase. Create
   `.relay/YYYY-MM-DD-<slug>/` with today's date and a short kebab-case slug
@@ -171,6 +177,14 @@ What goes into a task file:
   lives, which existing component or pattern to extend, error and empty
   behaviour. Everything the implementer would otherwise have to guess.
 - **Exact paths and commands** with the expected outcome.
+- **UI rules by ID**: a task that builds or changes a screen with a UI
+  contract names the contract file, the IDs of the rules it must make true,
+  and the reference screenshots of the states it builds. Its Implement step
+  says where each group of rules lands (which component, which definition
+  file). The contract is not copied into the task: its implementer reads the
+  file, which is the one home of those values. A rule that spans several
+  slices (the column widths of a table that grows over three tasks) is
+  claimed by the task that completes it.
 
 **Write it tight.** A complex feature needs a long plan, and that is fine.
 What is not fine is length that carries nothing: every extra sentence is
@@ -209,6 +223,8 @@ These are plan failures; never write them:
 - "Write tests for the above" without the concrete cases
 - "Similar to Task N" (repeat what matters; the implementer of a task reads
   that task's file, not the others)
+- "Follow the mockup", "match the design", "as in <reference>" without the
+  contract rule IDs that say what to match
 - References to types, functions, or methods not defined in any task or in
   the existing code
 
@@ -221,31 +237,35 @@ re-review needed:
 
 1. **Spec coverage**: for each requirement and decision, point to the task
    that implements it. Add tasks for gaps.
-2. **Slices**: every task has a concrete Demo and at least one test case at a
+2. **UI coverage**: every rule of every contract under `ui/`, `shared.md`
+   included, is claimed by a task, and every task that builds a screen with a
+   contract claims rules of it. A screen the design or brief shows without a
+   contract is a gap: distil it (step 0).
+3. **Slices**: every task has a concrete Demo and at least one test case at a
    public seam; no task is a horizontal layer (except prefactors and
    expand–contract steps); the Task Overview has one row per task file, with
    the same number and name as the file and its heading.
-3. **Placeholder scan**: search for the red flags above. Fix them.
-4. **Contract consistency**: names, signatures, and property names used in
+4. **Placeholder scan**: search for the red flags above. Fix them.
+5. **Contract consistency**: names, signatures, and property names used in
    later tasks match what earlier tasks define. `clearLayers()` in Task 3 and
    `clearFullLayers()` in Task 7 is a bug.
-5. **No pre-written implementation**: code blocks hold contracts only.
-6. **Tightness**: reread `plan.md` and every task file once against "Write
+6. **No pre-written implementation**: code blocks hold contracts only.
+7. **Tightness**: reread `plan.md` and every task file once against "Write
    it tight". Delete each sentence that fails the deletion test; move what
    is said twice to its one home (the signatures in `Consumes` stay); turn
    prose that lists things into a list. `plan.md` holds no task details.
    What is left after this pass is the feature's own length: do not cut
    decisions, contracts, or test cases to make the plan shorter, and do not
    propose a split because of length.
-7. **Verification is executable**: every non-manual line has a command and an
+8. **Verification is executable**: every non-manual line has a command and an
    expected result; manual lines say exactly what to check.
-8. **Demos are checked unattended**: every Demo a test can decide has one;
+9. **Demos are checked unattended**: every Demo a test can decide has one;
    browser behaviour has a Playwright spec when the repository has Playwright
    (or a recorded Decision when it does not); `Manual:` holds only what needs
    human judgement or an environment the test runner cannot reach.
-9. **Diagrams**: every diagram is a Mermaid block that passes the checks at
-   the end of `../relay-design/references/diagrams.md`; no ASCII or
-   box-drawing art remains.
+10. **Diagrams**: every diagram is a Mermaid block that passes the checks at
+    the end of `../relay-design/references/diagrams.md`; no ASCII or
+    box-drawing art remains.
 
 ## 7. Ask whether to review
 
