@@ -40,6 +40,9 @@ section lists the acceptance checks the implementer claims to have run. Read
 `[FEATURE_DIR]/design.md` only if the plan refers to it for a decision you
 need to judge.
 
+If `[FEATURE_DIR]/ui/` holds UI contracts (`<screen>.md`), their rules are
+requirements too, for the screens they describe.
+
 ## Range under review
 
 - Base: [BASE_SHA]
@@ -94,6 +97,25 @@ Code quality:
 - DRY without premature abstraction; names that say what things are.
 - Follows the patterns of the surrounding code.
 
+UI contract (only for screens with a `[FEATURE_DIR]/ui/<screen>.md`):
+- Read the contract, then `ui/<screen>.impl/check-report.md`. A failed
+  check is a finding with its rule ID. In the report's element mapping, a
+  differing count or an unrelated text means a check ran on the wrong
+  element: that check proves nothing, and that is a finding.
+- Look at every image in `ui/<screen>.impl/compare/`: the reference is on
+  the left, the implementation on the right. You are the only one who
+  compares them with fresh eyes. Put each visible difference into one of
+  three groups:
+  1. it breaks a rule of the contract, including the rules marked `look`:
+     a finding, with the rule ID;
+  2. no rule covers it: list it under "Differences the contract does not
+     cover" in the report, for the user to decide. Do not grade it;
+  3. it belongs to what the contract leaves to the component library, or to
+     its "Not in this contract" section: ignore it.
+- Differences of a few pixels are not findings; the checks own the numbers.
+- No report or no images for a screen with a contract is an Important
+  finding: the check was not run.
+
 Testing:
 - Tests verify real behaviour, not mocks; edge cases covered.
 - Verification evidence in the plan matches what the diff actually changed.
@@ -128,6 +150,11 @@ Write the report to [REPORT_PATH] with exactly this structure:
 
 For each issue: file:line, what is wrong, why it matters, how to fix if not
 obvious. Number the issues within each severity so fixes can refer to them.
+
+### Differences the contract does not cover
+[Only when the feature has UI contracts. Per screen: what differs between
+reference and implementation that no rule mentions, with the image it shows
+in. "None" when you looked and found none.]
 
 ### Recommendations
 [Improvements for code quality, architecture, or process.]

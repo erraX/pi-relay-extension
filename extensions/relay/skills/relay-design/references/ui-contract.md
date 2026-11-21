@@ -24,11 +24,17 @@ defaults are its design.
   reference/              a copy of the reference, when it lives outside the worktree
   shared.md               rules that hold on every screen (links, table base, page container)
   <screen>.md             the contract of one screen
-  <screen>.json           what to open, which states, which elements: input of the script
+  <screen>.json           what to open, which states, which elements, which checks: input of the scripts
   <screen>/
     screenshots/          one image per state
     measurements.json     boxes and computed styles of the named elements
+    check-report.md       the checks judged against the reference itself
 ```
+
+During implementation the same directory gets `<screen>.impl.json` and
+`<screen>.impl/` (the implementation measured the same way, the check report
+and the side-by-side images); `../../relay-ship/references/ui-check.md`
+describes them.
 
 ## 1. Make the reference reachable
 
@@ -134,12 +140,13 @@ with the measured width of whatever has a fixed one. Not ASCII art
 **Rules.** One table per region (page skeleton, filter bar, table, cells,
 states, empty state). A row is one rule:
 
-| ID | Rule | Measured | Source |
-|---|---|---|---|
-| F2 | The five filter controls sit on one line, bottom-aligned, gap `spacing_3x`; they never wrap | all five at y = 217 | `reference/app.css:339` |
-| F3 | Each select is 168px wide; Search takes the rest | 168 × 4; Search 338 | `reference/app.css:412` |
-| T2 | Column widths: 44px, auto, 108px, 13%, 164px | 44 / 479 / 108 / 144 / 164 | `reference/app.css:420-421` |
-| T8 | Row actions never extend past the table's right edge | actions end at 1120.7, table at 1124 | measured |
+| ID | Rule | Measured | Source | Check |
+|---|---|---|---|---|
+| F1 | The filters sit in a card: elevated background, 1px border, shadow | 1108 × 231 | `reference/app.css:338` | look |
+| F2 | The five filter controls sit on one line, bottom-aligned, gap `spacing_3x`; they never wrap | all five at y = 217 | `reference/app.css:339` | script |
+| F3 | Each select is 168px wide; Search takes the rest | 168 × 4; Search 338 | `reference/app.css:412` | script |
+| T2 | Column widths: 44px, auto, 108px, 13%, 164px | 44 / 479 / 108 / 144 / 164 | `reference/app.css:420-421` | script |
+| T8 | Row actions never extend past the table's right edge | actions end at 1120.7, table at 1124 | measured | script |
 
 - **ID**: a letter per region and a number, unique in the file. Tasks claim
   rules by ID, so an ID never changes meaning once the design is approved.
@@ -149,6 +156,10 @@ states, empty state). A row is one rule:
 - **Measured**: the value in the reference, from `measurements.json`.
 - **Source**: the line of the reference's CSS or markup the rule comes from.
   When the two disagree, the source wins; the measurement is the cross-check.
+- **Check**: `script` when a check in `<screen>.json` decides the rule (step
+  4), `look` when only a person or a reviewer comparing the two screenshots
+  can. Prefer `script`: a 24px difference is invisible in an image and
+  obvious in a number.
 
 What to look for, because these are what component defaults do not give:
 
@@ -182,7 +193,62 @@ controls, sample data, parts another contract covers.
 Rules that hold on every screen go to `ui/shared.md`, in the same table form,
 and are not repeated per screen.
 
-## 4. Conflicts are questions
+## 4. Write the checks
+
+A rule that has a number or a relation in it is decided by a script when the
+implementation is verified, so write that decision down now, while the
+reference is at hand to prove it. Add `checks` to the state of `<screen>.json`
+whose elements they use:
+
+```json
+"checks": [
+  { "rule": "F2", "check": "sameRow", "of": "filterFields" },
+  { "rule": "F2", "check": "gap", "of": "filterFields", "equals": 12 },
+  { "rule": "F3", "check": "width", "of": "filterFields", "equals": [null, 168, 168, 168, 168] },
+  { "rule": "T2", "check": "width", "of": "headerCells", "equals": [44, null, 108, "13%", 164], "percentOf": "table" },
+  { "rule": "T8", "check": "inside", "of": "rowActions", "container": "table", "axis": "x" },
+  { "rule": "R8", "check": "singleLine", "of": "ownerTeams" },
+  { "rule": "L1", "check": "style", "of": "assetLink", "expect": { "color": "token:color_action_foreground", "text-decoration-line": "none" } },
+  { "rule": "F1", "check": "style", "of": "filterCard", "expect": { "border-radius": "token:border_radius_200" }, "converted": true }
+]
+```
+
+| `check` | Passes when | Arguments |
+|---|---|---|
+| `sameRow` | the elements share one line (each overlaps its neighbour vertically) | `of` |
+| `stacked` | each element starts below the end of the one before | `of` |
+| `width`, `height` | each element has the pinned size | `of`; `equals` (px, `"N%"` of `percentOf`, or a list with `null` for a size that is not pinned), `min`, `max` |
+| `gap` | the distance from the end of one element to the start of the next is as pinned | `between: [a, b]` or `of` (neighbours); `axis` `x` (default) or `y`; `equals`, `min`, `max` |
+| `inside` | no element leaves the container | `of`, `container`; `axis` `x`, `y` or `both` (default) |
+| `singleLine` | the text takes one line | `of` |
+| `style` | the computed style has these values | `of`; `expect`: property → value, `token:<name>` for a design token; `font-size`, `line-height`, `font-weight` are available too |
+| `noHorizontalOverflow` | the page does not scroll sideways | |
+
+- `of` is an element name of that state, or a list of names; an
+  `{ "all": … }` element contributes every match.
+- Every check has the `rule` it serves; a rule can have several. Sizes allow
+  1px of difference; `tolerance` changes that for one check.
+- Checks compare relations and sizes, never positions on the page: the real
+  components are a few pixels taller than a mockup's, and a check that pins
+  `y = 217` would fail for a reason nobody cares about.
+- Point `singleLine` at the element that holds the text. A table cell is as
+  tall as its row, so it says nothing about its own text.
+- "Does not overflow" is an `inside` check against the container. A table
+  that is too wide scrolls inside its own wrapper, and the page itself
+  reports no overflow.
+- `converted: true` marks a check whose value the contract changed on purpose
+  (a Conversion): the reference is not expected to pass it.
+
+Then run the checks against the reference:
+
+```sh
+node <relay-design skill>/scripts/check-ui.mjs .relay/YYYY-MM-DD-<slug>/ui/<screen>.json
+```
+
+Every check must pass, the converted ones aside. A check that fails on the
+reference does not say what its rule says: fix the check, or the rule.
+
+## 5. Conflicts are questions
 
 Distilling turns up things only the user can settle. Ask them in the
 interview, one at a time, with your recommendation, and record each answer in
@@ -202,12 +268,15 @@ An approved design has no open question left in a contract.
 A design-tool export or a set of screenshots has no CSS to measure. Put the
 images in `ui/<screen>/screenshots/`, write the same contract with every
 number marked as an estimate (`≈ 168px`) and no Source, and say so at the top
-of the file. The user confirms the numbers in the review.
+of the file. The user confirms the numbers in the review. Checks can still be
+written, but nothing proves them before the implementation exists; say that
+too.
 
 ## Check before review
 
 For each screen with a visual reference: the reference opens from this
 worktree; `ui/<screen>.md` exists and its screenshots cover the states listed
 above; every rule has an ID, a checkable sentence and a measured value; every
-raw value of the reference appears under Conversions; nothing in the file is
-an open question.
+rule marked `script` has a check and `check-ui.mjs` passes on the reference;
+every raw value of the reference appears under Conversions; nothing in the
+file is an open question.

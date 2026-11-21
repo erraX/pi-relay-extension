@@ -145,8 +145,27 @@ runs unattended, in this order:
      (global setup, stored auth state). If there is none and building one is
      outside the feature, that check becomes `Manual:` and Decisions says
      why.
-3. **`Manual:` is the remainder**: what no test can decide. That means look
-   and feel, product acceptance, and environments the test runner cannot
+3. **The layout a UI contract pins is checked by the contract's checks**,
+   run with `../relay-design/scripts/check-ui.mjs` against the running
+   implementation (`../relay-ship/references/ui-check.md`). A task that
+   claims rules is done when their checks pass; the Verification section runs
+   every screen's checks once more. For that the plan settles, in
+   `## Decisions`:
+   - how the implementation is opened unattended: the command that starts it
+     and the URL of each screen with a contract. If it needs a login no
+     script can pass, the checks become `Manual:` and Decisions says why.
+   - that the implementation shows the reference's sample data on those
+     screens (the same rows, the same labels), so that content-dependent
+     sizes can be compared. Name the task that provides it.
+
+   These checks accept this build against its reference; they are not
+   regression tests and stay out of the repository's test suite. A rule
+   worth guarding for good (no horizontal scroll, the filters on one row)
+   gets an assertion in a task's Playwright spec when you decide so, rule by
+   rule.
+4. **`Manual:` is the remainder**: what no test can decide. That means final
+   acceptance of the look (for a screen with a contract: its side-by-side
+   images), product acceptance, and environments the test runner cannot
    reach (real devices, third-party accounts). Each says what to look at and
    where.
 
@@ -184,7 +203,10 @@ What goes into a task file:
   file). The contract is not copied into the task: its implementer reads the
   file, which is the one home of those values. A rule that spans several
   slices (the column widths of a table that grows over three tasks) is
-  claimed by the task that completes it.
+  claimed by the task that completes it. The first task that builds the
+  screen creates `ui/<screen>.impl.json`; every task with claimed rules ends
+  by running the check, written out as the full command with the absolute
+  path of `check-ui.mjs`.
 
 **Write it tight.** A complex feature needs a long plan, and that is fine.
 What is not fine is length that carries nothing: every extra sentence is
@@ -261,8 +283,11 @@ re-review needed:
    expected result; manual lines say exactly what to check.
 9. **Demos are checked unattended**: every Demo a test can decide has one;
    browser behaviour has a Playwright spec when the repository has Playwright
-   (or a recorded Decision when it does not); `Manual:` holds only what needs
-   human judgement or an environment the test runner cannot reach.
+   (or a recorded Decision when it does not); every screen with a UI contract
+   has its `check-ui.mjs` line in Verification, and Decisions says how the
+   implementation is opened and where its sample data comes from; `Manual:`
+   holds only what needs human judgement or an environment the test runner
+   cannot reach.
 10. **Diagrams**: every diagram is a Mermaid block that passes the checks at
     the end of `../relay-design/references/diagrams.md`; no ASCII or
     box-drawing art remains.

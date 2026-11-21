@@ -28,6 +28,8 @@ Placeholders:
 - `[CONFIG_PATH]` — absolute path of `.relay/config.json`
 - `[BRANCH]` — the feature branch
 - `[BASE_SHA]` — recorded in preflight
+- `[UI_CHECK_GUIDE_PATH]` — absolute path of this skill's
+  `references/ui-check.md`
 - Task assignment: `[TASK_PATH]` — absolute path of the task's file,
   `[TASKS_DIR]/NN-<task-slug>.md`
 - Fix assignment: `[ROUND]`, `[REPORT_PATH]` (`[FEATURE_DIR]/reviews/round-[ROUND].md`),
@@ -91,8 +93,9 @@ Stop, leave the code at your last commit plus your current attempt
 uncommitted, and report with `Status: blocked` when:
 
 - **Plan conflict** — a step cannot work as written, the plan leaves a
-  decision open, or a Global Constraint would be violated. Quote the plan or
-  task text and what you found in the code.
+  decision open, a Global Constraint would be violated, or a rule of a UI
+  contract cannot be met. Quote the plan, task or rule text and what you
+  found in the code.
 - **Three strikes** — the same test fails with the same error three times in
   a row. Report the failing test and its error, the three things you tried,
   and your best guess at the cause (a wrong assumption in the plan, missing
@@ -155,13 +158,21 @@ them and continue from the first unticked one.
   browser Demo and the repository has Playwright, write the spec as part of
   this task's tests. Never add Playwright to a repository that lacks it;
   that is a plan decision.
-- `human:` in the notes is only for a Demo no test can decide: look and feel,
-  product acceptance, an environment the test runner cannot reach. Say what
-  to look at and where; do not claim it.
+- When the task has a `UI contract` block: read [UI_CHECK_GUIDE_PATH], the
+  rules it names and their reference screenshots before you write markup or
+  styles. The rules bind like Decisions. Keep `ui/<screen>.impl.json` in step
+  with what you build, run the check the task names, and do not finish while
+  a check of a rule this task claims fails. The contract, the reference's
+  spec and its checks are not yours to edit; a rule you cannot meet is a
+  plan conflict.
+- `human:` in the notes is only for a Demo no test can decide: acceptance of
+  the look, product acceptance, an environment the test runner cannot reach.
+  Say what to look at and where; do not claim it.
 - Tick each step (`- [ ]` → `- [x]`) in [TASK_PATH] as you complete it. The
   ticks are the progress record a resumed run trusts. Apart from the ticks
   and the recorded Demo result, change nothing in [TASK_PATH], and nothing at
-  all in [PLAN_PATH] or the other task files.
+  all in [PLAN_PATH] or the other task files. Under [FEATURE_DIR]/ui/ you
+  write only `<screen>.impl.json`; the script writes `<screen>.impl/`.
 - Commit at least once for the task.
 
 `Status: done` means every step in [TASK_PATH] is ticked, the task's work is
@@ -184,6 +195,8 @@ not marked `Manual:`, in order.
   the check. If the fix lies outside the plan's scope, stop and report
   (`Status: blocked`).
 - `Manual:` lines stay unticked; they are the human's.
+- A `check-ui.mjs` line: read [UI_CHECK_GUIDE_PATH] first. Every check must
+  pass and the element mapping in the report must show no differing count.
 - If a check was already ticked by an earlier pass, run it again anyway: the
   code may have changed since.
 

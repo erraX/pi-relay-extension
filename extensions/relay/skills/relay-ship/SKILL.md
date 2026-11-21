@@ -157,8 +157,10 @@ Each round `N` (starting at 1):
    available, otherwise with `glab mr create --draft` (or `gh pr create
    --draft` on GitHub). Besides the normal summary, include a short relay
    section in the description: review rounds and final verdict, deferred
-   Minor findings, the `Manual:` verification items still open, and the
-   demos only a human can check (the `human:` lines in `notes.md`). Any
+   Minor findings, the `Manual:` verification items still open, the
+   demos only a human can check (the `human:` lines in `notes.md`), and,
+   for a feature with UI contracts, what the last review listed under
+   "Differences the contract does not cover". Any
    diagram in the description is a Mermaid block following
    `../relay-design/references/diagrams.md`, never ASCII art.
 4. Write `mr: <url>` and `status: in-review` into the plan frontmatter.
@@ -175,6 +177,9 @@ Report in a few lines:
 - Verification: what passed; the manual items waiting for the user
 - Demos only a human can check, one line each, from the `human:` lines in
   `notes.md` (task and what to look at)
+- For a feature with UI contracts: where the side-by-side images are
+  (`ui/<screen>.impl/compare/`) and the differences the reviewer found that
+  no rule covers; the user decides whether each becomes a rule
 - Anything deferred, pushed back, or decided during ship that the user should
   look at
 
