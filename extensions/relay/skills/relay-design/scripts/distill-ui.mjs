@@ -13,6 +13,9 @@
  * and the computed style of each named element in `<out>/measurements.json`.
  * `<out>` defaults to the spec's path without `.json`.
  *
+ * A state's `checks` are not read here: check-ui.mjs evaluates them against
+ * the measurements this script writes.
+ *
  * Playwright is taken from the repository the command runs in, not from this
  * package: run it from the repository root. A repository without Playwright
  * cannot run this script; adding it is the user's decision.
@@ -34,7 +37,7 @@ const STEP_KINDS = ["click", "hover", "fill", "select", "press", "wait", "waitFo
  * nothing (the initial value). `null`: always recorded. Font size, line height
  * and weight are always recorded, as one `font` entry.
  */
-const STYLE_PROPERTIES = {
+export const STYLE_PROPERTIES = {
 	display: null,
 	flex: "0 1 auto",
 	gap: "normal",
@@ -124,6 +127,7 @@ export function parseSpec(spec, specPath) {
 			// A state that ends with the pointer on something shows its hover style.
 			keepsPointer: steps.some((step) => step.kind === "hover"),
 			elements: parseElements(state.elements, where),
+			checks: state.checks ?? [],
 			crops: Object.entries(state.crops ?? {}).map(([name, selector]) => {
 				if (!/^[a-z0-9][a-z0-9-]*$/.test(name) || typeof selector !== "string") {
 					fail(`${where}: a crop is "<file-name-part>": "<selector>"`);
@@ -168,19 +172,27 @@ function measureInPage({ elements, styleProperties, rootSelector, tokenPrefix })
 
 	/** @type {Record<string, string[]>} */
 	const tokensByValue = {};
+	/** @type {Record<string, string>} every colour and length token with its computed value */
+	const tokenValues = {};
 	if (tokenPrefix) {
 		const probe = document.createElement("span");
 		document.body.appendChild(probe);
-		const rootStyle = getComputedStyle(document.documentElement);
+		// Read on the root element, not on <html>: a theme provider sets its tokens
+		// on an element of its own, and they are inherited from there.
+		const rootStyle = getComputedStyle(document.querySelector(rootSelector));
 		for (const name of rootStyle) {
 			if (!name.startsWith(tokenPrefix)) continue;
 			const value = rootStyle.getPropertyValue(name).trim();
 			const property = CSS.supports("color", value) ? "color" : CSS.supports("width", value) ? "width" : null;
 			// Type sizes are lengths too, but no padding or radius is ever one of them.
-			if (!property || (property === "width" && /font|line-height|letter-spacing/.test(name))) continue;
+			if (!property) continue;
 			probe.style.setProperty(property, value);
-			(tokensByValue[getComputedStyle(probe).getPropertyValue(property)] ||= []).push(name);
+			const computedValue = getComputedStyle(probe).getPropertyValue(property);
 			probe.style.removeProperty(property);
+			tokenValues[name] = computedValue;
+			// Type sizes are lengths too, but no padding or radius is ever one of them.
+			if (property === "width" && /font|line-height|letter-spacing/.test(name)) continue;
+			(tokensByValue[computedValue] ||= []).push(name);
 		}
 		probe.remove();
 		// Many tokens share one value; the shortest names are the plainest ones.
@@ -223,13 +235,16 @@ function measureInPage({ elements, styleProperties, rootSelector, tokenPrefix })
 		result[name] = matches.length === 0 ? null : all ? matches.map(measure) : measure(matches[0]);
 	}
 	return {
-		elements: result,
-		overflowsHorizontally: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+		tokenValues,
+		state: {
+			elements: result,
+			overflowsHorizontally: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+		},
 	};
 }
 
 /** Playwright from the repository the command runs in. */
-function loadChromium() {
+export function loadChromium() {
 	const requireFromRepository = createRequire(join(process.cwd(), "package.json"));
 	for (const name of ["@playwright/test", "playwright", "playwright-core"]) {
 		try {
@@ -254,7 +269,12 @@ async function runStep(page, { kind, value }) {
 	else await page.locator(value).first().waitFor();
 }
 
-async function distil(specPath, outputDirectory) {
+/**
+ * Measures every state of the spec and writes the screenshots and
+ * `measurements.json` into the output directory. Returns the measurements and
+ * the selectors that matched nothing (`<state>: <element> (<selector>)`).
+ */
+export async function distil(specPath, outputDirectory) {
 	const spec = parseSpec(JSON.parse(readFileSync(specPath, "utf8")), specPath);
 	const screenshotDirectory = join(outputDirectory, "screenshots");
 	mkdirSync(screenshotDirectory, { recursive: true });
@@ -275,6 +295,8 @@ async function distil(specPath, outputDirectory) {
 		viewport: spec.viewport,
 		root: spec.root,
 		note: "box is in CSS px relative to the top-left corner of the root element",
+		tokenPrefix: spec.tokenPrefix,
+		tokenValues: {},
 		states: {},
 	};
 	const notFound = [];
@@ -287,7 +309,14 @@ async function distil(specPath, outputDirectory) {
 				await page.addStyleTag({ content: `${spec.hide.join(", ")} { display: none !important; }` });
 			}
 			await page.locator(spec.waitFor).first().waitFor();
-			for (const step of state.steps) await runStep(page, step);
+			for (const [index, step] of state.steps.entries()) {
+				try {
+					await runStep(page, step);
+				} catch (error) {
+					const [reason] = error.message.split("\n");
+					fail(`State "${state.name}", step ${index + 1} (${step.kind} ${JSON.stringify(step.value)}): ${reason}`);
+				}
+			}
 			// A click leaves the pointer on the element, which would show its hover style.
 			if (!state.keepsPointer) await page.mouse.move(0, 0);
 
@@ -304,8 +333,9 @@ async function distil(specPath, outputDirectory) {
 				rootSelector: spec.root,
 				tokenPrefix: spec.tokenPrefix,
 			});
-			measurements.states[state.name] = { description: state.description, ...measured };
-			for (const [name, value] of Object.entries(measured.elements)) {
+			measurements.states[state.name] = { description: state.description, ...measured.state };
+			measurements.tokenValues = measured.tokenValues;
+			for (const [name, value] of Object.entries(measured.state.elements)) {
 				if (value === null) notFound.push(`${state.name}: ${name} (${state.elements[name].selector})`);
 			}
 			await page.close();
@@ -317,10 +347,7 @@ async function distil(specPath, outputDirectory) {
 	writeFileSync(join(outputDirectory, "measurements.json"), `${JSON.stringify(measurements, null, 2)}\n`);
 	const shown = relative(process.cwd(), outputDirectory);
 	console.log(`${spec.states.length} states → ${shown.startsWith("..") ? outputDirectory : shown || "."}`);
-	if (notFound.length > 0) {
-		// A named element that the page lacks is a wrong selector or a wrong state.
-		fail(`Selectors that matched nothing:\n  ${notFound.join("\n  ")}`);
-	}
+	return { measurements, notFound };
 }
 
 function show(measurementsPath, stateName, elementName) {
@@ -348,7 +375,9 @@ async function main(argv) {
 	if (!specPath?.endsWith(".json") || !existsSync(specPath) || (outFlag >= 0 && !out)) {
 		fail(USAGE);
 	}
-	return distil(specPath, resolve(out ?? specPath.replace(/\.json$/, "")));
+	const { notFound } = await distil(specPath, resolve(out ?? specPath.replace(/\.json$/, "")));
+	// A named element that the page lacks is a wrong selector or a wrong state.
+	if (notFound.length > 0) fail(`Selectors that matched nothing:\n  ${notFound.join("\n  ")}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {

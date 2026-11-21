@@ -60,8 +60,10 @@ ever committed and the repository's own `.gitignore` is never touched.
     design.md             optional, from /relay-design
     ui/                   optional: one contract per screen that has a visual reference
       todo-list.md        the layout rules the implementation must follow, each with an ID
-      todo-list.json      which page, states and elements were measured
+      todo-list.json      which page, states and elements were measured, and the checks of the rules
       todo-list/          reference screenshots per state, measurements.json
+      todo-list.impl.json where the same states and elements are in the implementation
+      todo-list.impl/     check report, reference and implementation side by side
     plan.md               goal, constraints, decisions, task overview, verification
     tasks/
       01-csv-encoder.md   one file per task: demo, files, interfaces, steps to tick
@@ -101,7 +103,8 @@ pi -e git:github.com/erraX/pi-relay-extension
 - Optional: Playwright in the repository you work on. `/relay-design` uses it
   to measure a visual reference (`skills/relay-design/scripts/distill-ui.mjs`)
   for the UI contract; without it the agent measures with its own browser
-  tool or works from images.
+  tool or works from images. The implementer and the verification pass use it
+  to judge the implementation against the contract's checks (`check-ui.mjs`).
 
 ## Layout
 
@@ -113,6 +116,7 @@ extensions/relay/
   *.test.ts             `npm test` (Node ≥ 22.18 for native TypeScript)
   skills/relay-*/       the workflow, plain Agent Skills registered via resources_discover
   skills/relay-design/scripts/distill-ui.mjs  screenshots and measurements of a visual reference, for the UI contract
+  skills/relay-design/scripts/check-ui.mjs    the contract's checks against the reference or the implementation, side-by-side images
   agents/relay-implementer.md  fresh-context implementer (one task / verification / fix pass) used by relay-ship
   agents/relay-reviewer.md     fresh-context, read-only reviewer used by relay-ship
 ```

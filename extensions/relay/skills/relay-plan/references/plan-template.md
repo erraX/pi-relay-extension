@@ -74,7 +74,9 @@ options and why. This is what the reviewer checks the implementation against.]
 - [ ] `npm test` — all tests pass, output free of warnings
 - [ ] `<feature-specific command>` — <exact expected output or behaviour>
 - [ ] `npx playwright test <specs>` — the feature's browser specs pass (when the repo has Playwright)
+- [ ] `node <abs path>/check-ui.mjs .relay/<feature>/ui/<screen>.json --impl .relay/<feature>/ui/<screen>.impl.json` — every check passes (one line per screen with a UI contract)
 - [ ] Manual: <what only a human can judge, step by step, and what they should see>
+- [ ] Manual: look through `.relay/<feature>/ui/<screen>.impl/compare/*.png` (reference left, implementation right) and accept the look (one line per screen with a UI contract)
 ````
 
 Frontmatter fields:
@@ -127,6 +129,7 @@ per visible todo".]
 contract; paths are relative to the feature directory]
 - Rules: `ui/todo-list.md` S4, F1–F3; `ui/shared.md` L1
 - Screenshots: `ui/todo-list/screenshots/01-default.png`, `05-filters-applied.png`
+- Implementation spec: `ui/todo-list.impl.json` (create | extend), states `01-default`, `05-filters-applied`
 
 **Interfaces:**
 - Consumes: [what this task uses from earlier tasks — exact names, types and
@@ -153,7 +156,10 @@ contract; paths are relative to the feature directory]
   task: read the contract rules and screenshots named above first, and where
   each group of rules lands, e.g. "F1–F3 in `TodoFilterBar.vue`".]
 - [ ] **Step 4: Run them, expect PASS** — the same commands, plus
-  `npm run typecheck`
+  `npm run typecheck`. [For a UI task, also: start the implementation as
+  Decisions says, run `node <abs path>/check-ui.mjs <abs>/ui/todo-list.json
+  --impl <abs>/ui/todo-list.impl.json`, and the checks of S4, F1–F3 and L1
+  pass.]
 - [ ] **Step 5: Demo and commit** — the Playwright spec above checks the Demo;
   record its result, then commit `feat(todos): <subject>`
 ````
@@ -178,8 +184,9 @@ What belongs in a task file and what does not:
 - A **prefactor** task has `**Demo:** No visible change; <named tests> stay
   green` and comes first.
 - **Every Demo names what checks it**, following "How a Demo is checked" in
-  the skill: a test, a Playwright spec for browser behaviour, or, for what
-  only a human can judge, a `Manual:` line in Verification.
+  the skill: a test, a Playwright spec for browser behaviour, the contract's
+  checks for the layout of a screen with a UI contract, or, for what only a
+  human can judge, a `Manual:` line in Verification.
 
 ## Verification rules
 
@@ -190,8 +197,11 @@ that the reviewer treats as evidence. Per-task tests do not replace it.
   feature-specific checks with their exact expected result.
 - Browser behaviour is covered by the Playwright specs the tasks add, run
   here with the repository's Playwright command, not by `Manual:` lines.
-- Mark checks that need human judgement (look and feel, product acceptance)
-  or an environment the test runner cannot reach with `Manual:`. relay-ship
+- A screen with a UI contract has two lines: its `check-ui.mjs` command, and
+  a `Manual:` line that points the user at the side-by-side images the
+  command leaves in `ui/<screen>.impl/compare/`.
+- Mark checks that need human judgement (acceptance of the look, product
+  acceptance) or an environment the test runner cannot reach with `Manual:`. relay-ship
   leaves them unticked and lists them when it hands over the merge request;
   it never pretends to have done them.
 - Every requirement in `## Decisions` should be covered by a test case in some

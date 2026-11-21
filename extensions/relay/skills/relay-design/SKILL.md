@@ -83,6 +83,11 @@ reference's values to keep. So write down the ones that bind: follow
 screenshots for every such screen, measured from the running reference with
 `scripts/distill-ui.mjs`.
 
+A rule nobody checks is a wish. For every rule with a number or a relation in
+it, write the check that will later judge the implementation, and prove it on
+the reference with `scripts/check-ui.mjs`: a check that fails there does not
+say what its rule says.
+
 What distilling turns up for the user to settle (the reference against the
 project's conventions, against an earlier decision, or a flaw in the reference
 itself) goes back into the interview as questions, one at a time, before the
@@ -113,9 +118,9 @@ asking:
 5. **Diagrams**: every diagram is a Mermaid block that passes the checks at
    the end of `references/diagrams.md`; no ASCII or box-drawing art remains.
 6. **UI**: every screen with a visual reference is a row under `## UI` with a
-   contract that passes the checks at the end of `references/ui-contract.md`.
-   No sentence defers to a reference without one ("as in the mockup", "X
-   governs the look").
+   contract that passes the checks at the end of `references/ui-contract.md`,
+   and `check-ui.mjs` passes on its reference. No sentence defers to a
+   reference without one ("as in the mockup", "X governs the look").
 
 ## 6. Crit review
 

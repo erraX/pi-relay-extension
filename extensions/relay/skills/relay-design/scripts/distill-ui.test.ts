@@ -31,6 +31,7 @@ describe("parseSpec", () => {
 			steps: [],
 			keepsPointer: false,
 			elements: {},
+			checks: [],
 			crops: [],
 		});
 	});
