@@ -8,6 +8,8 @@ A plan is one directory with two kinds of file:
   tasks/
     01-<task-slug>.md       one file per task, read by the implementer of that task
     02-<task-slug>.md
+  ui/                       UI contracts, when a screen has a visual reference;
+    <screen>.md             read by the implementer of each task that claims its rules
 ```
 
 relay-ship runs each task in a fresh subagent that reads `plan.md` and its own
@@ -53,7 +55,8 @@ without a design. Every task's requirements implicitly include this section.]
 
 [With a design: `See design.md — Decisions.` plus any decision made during
 planning that the design did not cover. With an external design brief or an
-already-built UI: its path and `UX decisions are settled there.` Otherwise:
+already-built UI: its path and `UX decisions are settled there.` With UI
+contracts: `Layout of each screen: ui/<screen>.md.` Otherwise:
 every decision settled in the interview, one line each, including rejected
 options and why. This is what the reviewer checks the implementation against.]
 
@@ -120,6 +123,11 @@ per visible todo".]
 - Test: `exact/path/to/todos-csv.test.ts`
 - Test: `e2e/todos-export.spec.ts` (Playwright, the repository's existing config)
 
+**UI contract:** [only for a task that builds or changes a screen with a
+contract; paths are relative to the feature directory]
+- Rules: `ui/todo-list.md` S4, F1–F3; `ui/shared.md` L1
+- Screenshots: `ui/todo-list/screenshots/01-default.png`, `05-filters-applied.png`
+
 **Interfaces:**
 - Consumes: [what this task uses from earlier tasks — exact names, types and
   paths, written out here: the implementer does not read the other task files]
@@ -141,7 +149,9 @@ per visible todo".]
   `todosToCsv` do not exist yet
 - [ ] **Step 3: Implement** — [what changes in each file and the decisions the
   implementer must not invent: where state lives, which existing component to
-  extend, error and empty behaviour. No full implementation code.]
+  extend, error and empty behaviour. No full implementation code. For a UI
+  task: read the contract rules and screenshots named above first, and where
+  each group of rules lands, e.g. "F1–F3 in `TodoFilterBar.vue`".]
 - [ ] **Step 4: Run them, expect PASS** — the same commands, plus
   `npm run typecheck`
 - [ ] **Step 5: Demo and commit** — the Playwright spec above checks the Demo;
@@ -153,6 +163,10 @@ What belongs in a task file and what does not:
 - **Everything the task needs is in its own file or in `plan.md`.** Its
   implementer reads those two and the code. Never point at another task file
   for content ("as in Task 2"); repeat the contract instead.
+- **A UI contract is the exception: it is named, not repeated.** The layout
+  values of a screen have one home, `ui/<screen>.md`; the task lists the rule
+  IDs it must make true and its implementer reads that file. "Follow the
+  mockup" without rule IDs is not a contract.
 
 - **Code is for contracts**: types, function signatures, schemas, exact strings
   and values the result must match, and the rare algorithm whose correctness is

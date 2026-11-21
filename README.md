@@ -16,7 +16,7 @@ footer.
 |---|---|
 | `/relay-init` | Set up a self-ignoring `.relay/` directory and `config.json` (base branch, verify commands, review rounds, models) in the current repo |
 | `/relay-grill [file]` | One-question-at-a-time interview to stress-test an idea or a relay doc; no files by default |
-| `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, Crit review) |
+| `/relay-design <topic>` | Idea → approved `design.md` (interview, compared approaches, HTML mockups, a UI contract per screen that has a visual reference, Crit review) |
 | `/relay-plan <topic \| feature dir>` | Design or conversation → approved `plan.md` plus one file per demoable vertical-slice task under `tasks/`; asks whether to review it in Crit before approving |
 | `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
 | `/relay-task <feature dir> [task]` | One task of an approved plan, implemented in the current session; then stops and names the next command |
@@ -58,6 +58,10 @@ ever committed and the repository's own `.gitignore` is never touched.
   config.json
   2026-01-02-csv-export/
     design.md             optional, from /relay-design
+    ui/                   optional: one contract per screen that has a visual reference
+      todo-list.md        the layout rules the implementation must follow, each with an ID
+      todo-list.json      which page, states and elements were measured
+      todo-list/          reference screenshots per state, measurements.json
     plan.md               goal, constraints, decisions, task overview, verification
     tasks/
       01-csv-encoder.md   one file per task: demo, files, interfaces, steps to tick
@@ -94,6 +98,10 @@ pi -e git:github.com/erraX/pi-relay-extension
   browser, and the plan when you ask for it; without it you review the file
   directly.
 - Optional: `glab` (GitLab) or `gh` (GitHub) to open the draft merge request.
+- Optional: Playwright in the repository you work on. `/relay-design` uses it
+  to measure a visual reference (`skills/relay-design/scripts/distill-ui.mjs`)
+  for the UI contract; without it the agent measures with its own browser
+  tool or works from images.
 
 ## Layout
 
@@ -104,6 +112,7 @@ extensions/relay/
   view.ts               task chips, durations, stall levels (pure)
   *.test.ts             `npm test` (Node ≥ 22.18 for native TypeScript)
   skills/relay-*/       the workflow, plain Agent Skills registered via resources_discover
+  skills/relay-design/scripts/distill-ui.mjs  screenshots and measurements of a visual reference, for the UI contract
   agents/relay-implementer.md  fresh-context implementer (one task / verification / fix pass) used by relay-ship
   agents/relay-reviewer.md     fresh-context, read-only reviewer used by relay-ship
 ```
