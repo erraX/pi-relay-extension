@@ -65,8 +65,15 @@ All artifacts (designs, plans, notes, review reports, config) live in `.relay/` 
 repository root. It contains a `.gitignore` with `*`, so nothing relay writes is
 ever committed and the repository's own `.gitignore` is never touched.
 
+pi completes `@` paths with `fd`, which would skip everything in a directory
+that ignores itself. So the extension also writes `.relay/.fdignore` (`!*`):
+`@.relay/…` and `@plan.md` then find relay's files, while git and `rg` go on
+ignoring them.
+
 ```
 .relay/
+  .gitignore              `*`: nothing in here is committed
+  .fdignore               `!*`: pi's `@` completion still sees the files (written by the extension)
   config.json
   2026-01-02-csv-export/
     design.md             optional, from /relay-design

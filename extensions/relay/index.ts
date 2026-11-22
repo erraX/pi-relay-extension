@@ -25,7 +25,8 @@
  * - while implementing or reviewing, a two-line task strip sits below the editor:
  *     🔨 csv-export · T4 Export button · step 3/5 · 6m
  *     ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 2 manual · 0 reviews
- *   (`verify` counts the commands relay runs; `manual` the open `Manual:` checks left to the user).
+ *   (`verify` counts the commands relay runs; `manual` the open `Manual:` checks left to the user);
+ * - `.relay/.fdignore` is written next to the `.gitignore`, so pi's `@` completion lists the files in `.relay/`.
  *
  * State comes from the plan and task files (status, ticks) on every refresh: session start,
  * after file-changing tool calls and subagent runs, when the agent settles, and
@@ -68,6 +69,7 @@ const baseDir = dirname(fileURLToPath(import.meta.url));
 const STATUS_KEY = "relay";
 const WIDGET_KEY = "relay-tasks";
 const CARD_TYPE = "relay-status";
+const FD_IGNORE_FILE = ".fdignore";
 /** Tool calls after which plan.md or a task file may have changed (status, ticks). */
 const REFRESH_TOOLS = new Set(["edit", "write", "bash", "subagent"]);
 const REFRESH_DEBOUNCE_MS = 250;
@@ -124,6 +126,7 @@ export default function relay(pi: ExtensionAPI) {
 	let cwd = process.cwd();
 	let root: string | undefined;
 	const rootCache = new Map<string, string | null>();
+	const fdExposed = new Set<string>();
 	let debounce: ReturnType<typeof setTimeout> | undefined;
 	let ticker: ReturnType<typeof setInterval> | undefined;
 	let working = false;
@@ -238,11 +241,31 @@ export default function relay(pi: ExtensionAPI) {
 		return [truncateToWidth(` ${top.join(sep)}`, width), truncateToWidth(` ${chips}   ${tail}`, width)];
 	}
 
+	/**
+	 * pi completes `@` paths with fd, which honours `.relay/.gitignore` (`*`) and
+	 * so lists nothing below `.relay/`. A `.fdignore` there outranks it for fd
+	 * alone: git and rg go on ignoring the directory, and the file is ignored like
+	 * the rest. Nothing is written until `.relay/` ignores itself (/relay-init),
+	 * and then once per repo and session.
+	 */
+	function exposeToFd(repoRoot: string): void {
+		if (fdExposed.has(repoRoot)) return;
+		const dir = join(repoRoot, RELAY_DIR);
+		if (!existsSync(join(dir, ".gitignore"))) return;
+		fdExposed.add(repoRoot);
+		const file = join(dir, FD_IGNORE_FILE);
+		if (existsSync(file)) return;
+		try {
+			writeFileSync(file, "!*\n");
+		} catch {}
+	}
+
 	async function refresh(ctx: ExtensionContext | undefined = current): Promise<void> {
 		if (!ctx) return;
 		current = ctx;
 		cwd = ctx.cwd;
 		root = await resolveRoot(cwd);
+		if (root) exposeToFd(root);
 		if (!ctx.hasUI) return;
 		const features = root ? listFeatures(root) : [];
 		const feature = pickCurrent(features, root ? await currentBranch(root) : undefined);
@@ -284,6 +307,7 @@ export default function relay(pi: ExtensionAPI) {
 
 	pi.on("session_start", async (_event, ctx) => {
 		rootCache.clear();
+		fdExposed.clear();
 		clock.progressKey = undefined;
 		clock.taskKey = undefined;
 		await refresh(ctx).catch(() => {});
