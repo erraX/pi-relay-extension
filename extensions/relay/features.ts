@@ -40,7 +40,10 @@ export type Feature = {
 	branch?: string;
 	mr?: string;
 	tasks: Task[];
+	/** The `## Verification` lines relay runs and ticks: everything but the `Manual:` lines. */
 	verification: Checklist;
+	/** The `Manual:` lines of `## Verification`, which only the user ticks. */
+	manual: Checklist;
 	/** Number of `reviews/round-*.md` reports. */
 	reviews: number;
 	/** Latest mtime of design.md / plan.md / task files / reviews, for "most recent". */
@@ -108,6 +111,8 @@ function* proseLines(text: string): Generator<string> {
 }
 
 const CHECKBOX = /^\s*[-*+]\s+\[([ xX])\]/;
+/** A verification line for a human: `- [ ] Manual: …`, also bold or lower case. */
+const MANUAL_CHECK = /^\s*[-*+]\s+\[[ xX]\]\s+(?:\*\*|__)?manual(?![\w-])/i;
 
 /** Count `- [ ]` / `- [x]` list items outside code fences. */
 export function countChecks(text: string): Checklist {
@@ -150,10 +155,13 @@ export function parseTaskFile(fileName: string, text: string): Task | undefined 
  * The plan's `## Verification` checklist, wherever that section sits, plus the
  * tasks of a plan that still holds them inline: `### Task N: name` headings,
  * each with the checkboxes up to the next task heading or any `##` heading.
+ * The checklist is split in two: `Manual:` lines wait for the user (some until
+ * after the merge), so they are not part of what relay's own run has to tick.
  */
-export function parsePlan(text: string): { tasks: Task[]; verification: Checklist } {
+export function parsePlan(text: string): { tasks: Task[]; verification: Checklist; manual: Checklist } {
 	const tasks: Task[] = [];
 	const verification: Checklist = { done: 0, total: 0 };
+	const manual: Checklist = { done: 0, total: 0 };
 	let task: Task | undefined;
 	let inVerification = false;
 	for (const line of proseLines(text)) {
@@ -173,12 +181,13 @@ export function parsePlan(text: string): { tasks: Task[]; verification: Checklis
 		}
 		const box = CHECKBOX.exec(line);
 		if (!box) continue;
-		const target = task ?? (inVerification ? verification : undefined);
+		const checklist = MANUAL_CHECK.test(line) ? manual : verification;
+		const target = task ?? (inVerification ? checklist : undefined);
 		if (!target) continue;
 		target.total++;
 		if (box[1] !== " ") target.done++;
 	}
-	return { tasks, verification };
+	return { tasks, verification, manual };
 }
 
 export const isComplete = (t: Task) => t.total > 0 && t.done === t.total;
@@ -230,7 +239,7 @@ export function readFeature(dir: string, slug: string): Feature | undefined {
 	if (!design && !plan) return undefined;
 	const designFm = design ? parseFrontmatter(design.text) : {};
 	const planFm = plan ? parseFrontmatter(plan.text) : {};
-	const parsed = plan ? parsePlan(plan.text) : { tasks: [], verification: { done: 0, total: 0 } };
+	const parsed = plan ? parsePlan(plan.text) : { tasks: [], verification: { done: 0, total: 0 }, manual: { done: 0, total: 0 } };
 	const files = readTasks(dir);
 	const reviews = countReviews(dir);
 	return {
@@ -244,6 +253,7 @@ export function readFeature(dir: string, slug: string): Feature | undefined {
 		mr: planFm.mr,
 		tasks: files.tasks.length ? files.tasks : parsed.tasks,
 		verification: parsed.verification,
+		manual: parsed.manual,
 		reviews: reviews.count,
 		mtimeMs: Math.max(design?.mtimeMs ?? 0, plan?.mtimeMs ?? 0, files.mtimeMs, reviews.mtimeMs),
 	};
@@ -377,6 +387,15 @@ export function stageLabel(f: Feature): string {
 		case "shipped":
 			return "shipped";
 	}
+}
+
+/**
+ * `verify 14/14 · 4 manual`: the verification commands ticked out of those the
+ * plan lists, then how many `Manual:` checks are still open (left out at zero).
+ */
+export function verifyLabel(f: Pick<Feature, "verification" | "manual">): string {
+	const open = f.manual.total - f.manual.done;
+	return `verify ${f.verification.done}/${f.verification.total}${open > 0 ? ` · ${open} manual` : ""}`;
 }
 
 /** Footer text without colours: `🔨 csv-export · ▰▰▰▱▱▱▱▱ 3/8 · T4 Export button`. */

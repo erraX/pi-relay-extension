@@ -24,7 +24,8 @@
  *   although the agent is working (⏳ stalled 18m);
  * - while implementing or reviewing, a two-line task strip sits below the editor:
  *     🔨 csv-export · T4 Export button · step 3/5 · 6m
- *     ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 0 reviews
+ *     ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 2 manual · 0 reviews
+ *   (`verify` counts the commands relay runs; `manual` the open `Manual:` checks left to the user).
  *
  * State comes from the plan and task files (status, ticks) on every refresh: session start,
  * after file-changing tool calls and subagent runs, when the agent settles, and
@@ -59,6 +60,7 @@ import {
 	stage,
 	stageLabel,
 	tasksDone,
+	verifyLabel,
 } from "./features.ts";
 import { formatDuration, type SegmentKind, stallLevel, taskChips } from "./view.ts";
 
@@ -227,8 +229,7 @@ export default function relay(pi: ExtensionAPI) {
 		const stall = stallText(f, theme, now);
 		if (stall) top.push(stall);
 
-		const v = f.verification;
-		const tailPlain = `verify ${v.done}/${v.total} · ${f.reviews} review${f.reviews === 1 ? "" : "s"}`;
+		const tailPlain = `${verifyLabel(f)} · ${f.reviews} review${f.reviews === 1 ? "" : "s"}`;
 		const tail = theme.fg("dim", tailPlain);
 		const budget = Math.max(10, width - 2 - visibleWidth(tailPlain) - 3);
 		const chips = taskChips(f.tasks, budget)

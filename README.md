@@ -35,8 +35,13 @@ two-line task strip sits below the editor:
 
 ```
  🔨 csv-export · T4 Export button · step 3/5 · 6m
- ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 0 reviews
+ ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6 ○T7 ○T8   verify 0/4 · 2 manual · 0 reviews
 ```
+
+`verify` counts the commands in the plan's `## Verification` section, which
+`/relay-ship` runs and ticks. Its `Manual:` lines are yours to tick, some only
+after the merge, so they are counted apart: `2 manual` is how many are still
+open.
 
 `/relay-ship` keeps its own session as a thin orchestrator: every task, the
 verification pass and every fix pass run in a fresh `relay-implementer`

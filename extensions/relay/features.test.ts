@@ -19,6 +19,7 @@ import {
 	setFrontmatterValue,
 	stage,
 	statusLine,
+	verifyLabel,
 } from "./features.ts";
 
 const lines = (...l: string[]) => l.join("\n");
@@ -147,10 +148,24 @@ describe("parseTaskFile", () => {
 describe("parsePlan", () => {
 	it("reads the verification checklist and no tasks from a plan whose tasks are files", () => {
 		const plan = lines("## Task Overview", "| 1 | Export button | … |", "## Verification", "- [x] `npm test`", "- [ ] Manual: look");
-		assert.deepEqual(parsePlan(plan), { tasks: [], verification: { done: 1, total: 2 } });
+		assert.deepEqual(parsePlan(plan), { tasks: [], verification: { done: 1, total: 1 }, manual: { done: 0, total: 1 } });
+	});
+	it("counts `Manual:` lines apart from the commands, however they are marked up", () => {
+		const plan = lines(
+			"## Verification",
+			"- [x] `npm test` — passes — Manual: not a manual line",
+			"- [ ] `npm run build`",
+			"- [ ] Manual: look at the page",
+			"- [x] **Manual:** click through",
+			"* [ ] manual - after the deploy",
+			"- [ ] Manually-named command `x`",
+		);
+		const { verification, manual } = parsePlan(plan);
+		assert.deepEqual(verification, { done: 1, total: 3 });
+		assert.deepEqual(manual, { done: 1, total: 3 });
 	});
 	it("groups the steps of inline tasks under their task and keeps verification separate", () => {
-		const { tasks, verification } = parsePlan(
+		const { tasks, verification, manual } = parsePlan(
 			lines(
 				"## Task Overview",
 				"| # | Task | Demo |",
@@ -163,7 +178,7 @@ describe("parsePlan", () => {
 				"- [x] Step 2",
 				"### Task 2 — Composer",
 				"- [x] Step 1",
-				"- [ ] Step 2",
+				"- [ ] Manual: a step, not a verification line",
 				"```markdown",
 				"### Task 9: not a task",
 				"- [ ] not a step",
@@ -176,10 +191,15 @@ describe("parsePlan", () => {
 			{ n: 1, name: "Export button", done: 2, total: 2 },
 			{ n: 2, name: "Composer", done: 1, total: 2 },
 		]);
-		assert.deepEqual(verification, { done: 1, total: 2 });
+		assert.deepEqual(verification, { done: 1, total: 1 });
+		assert.deepEqual(manual, { done: 0, total: 1 });
 	});
 	it("finds no tasks in a plan without task headings", () => {
-		assert.deepEqual(parsePlan(lines("# Plan", "- [ ] a")), { tasks: [], verification: { done: 0, total: 0 } });
+		assert.deepEqual(parsePlan(lines("# Plan", "- [ ] a")), {
+			tasks: [],
+			verification: { done: 0, total: 0 },
+			manual: { done: 0, total: 0 },
+		});
 	});
 });
 
@@ -350,6 +370,14 @@ describe("formatting", () => {
 		assert.equal(statusLine(approved), "✅ pi · approved · 2 tasks · ready to ship");
 		assert.equal(statusLine(review), "🔍 rv · verify & review");
 		assert.equal(statusLine(mr), "🚀 mr · MR !123");
+	});
+	it("shows the commands that ran and the manual checks still open", () => {
+		const none = { done: 0, total: 0 };
+		assert.equal(verifyLabel({ verification: { done: 14, total: 14 }, manual: { done: 0, total: 4 } }), "verify 14/14 · 4 manual");
+		assert.equal(verifyLabel({ verification: { done: 2, total: 5 }, manual: { done: 1, total: 2 } }), "verify 2/5 · 1 manual");
+		assert.equal(verifyLabel({ verification: { done: 0, total: 4 }, manual: none }), "verify 0/4");
+		assert.equal(verifyLabel({ verification: { done: 3, total: 3 }, manual: { done: 2, total: 2 } }), "verify 3/3");
+		assert.equal(verifyLabel({ verification: none, manual: { done: 0, total: 1 } }), "verify 0/0 · 1 manual");
 	});
 	it("shortens merge request URLs", () => {
 		assert.equal(mrLabel("https://gitlab.example.com/g/p/-/merge_requests/42"), "!42");
