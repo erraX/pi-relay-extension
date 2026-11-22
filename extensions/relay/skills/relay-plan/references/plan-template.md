@@ -83,8 +83,9 @@ Frontmatter fields:
 
 - `status`: `draft` → `approved` (the user approved it, with or without a
   Crit review) → `implementing` → `in-review`
-  (merge request open) → `shipped`. relay-plan owns the first two
-  transitions; relay-ship owns the rest.
+  (merge request open) → `shipped` (merged). relay-plan owns the first two
+  transitions, relay-ship the next two; the user sets `shipped` with
+  `/relay-done` after the merge.
 - `branch`: left empty here; relay-ship fills it when it creates the branch.
 - `base`: `git.base` from `.relay/config.json`, else the detected default
   branch.

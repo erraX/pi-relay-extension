@@ -21,6 +21,13 @@ footer.
 | `/relay-ship <feature dir>` | Approved plan → a fresh implementer subagent per task, verification, fresh-context review, fix, open a draft MR |
 | `/relay-task <feature dir> [task]` | One task of an approved plan, implemented in the current session; then stops and names the next command |
 | `/relay-status` | Every feature under `.relay/` and its next step (rendered locally, never sent to the LLM) |
+| `/relay-done [feature dir]` | Mark a feature shipped once its merge request is merged (writes `status: shipped` into `plan.md`; no LLM). Without an argument: the feature in the footer |
+
+The footer shows the feature whose plan names the current branch, else the
+most recently touched one. A shipped feature is never shown, and nothing but
+`/relay-done` marks a feature shipped: `/relay-ship` stops at `in-review`, so
+a feature stays in the footer until you run `/relay-done`. To drop a feature
+that has no plan yet, remove its directory.
 
 While a plan is being implemented, the footer shows task progress and turns
 yellow/red when no step has been ticked for a while (`⏳ stalled 18m`), and a

@@ -8,6 +8,7 @@
  *   /relay-ship      approved plan → fresh implementer per task, verify, fresh review, fix, draft MR
  *   /relay-task      one task of an approved plan in this session, by hand (a new session per task)
  *   /relay-status    every feature under .relay/ and its next step (no LLM)
+ *   /relay-done      mark a feature shipped once its merge request is merged (no LLM)
  *
  * The workflow itself lives in skills/ as plain Agent Skills (portable to other
  * agents); this extension is the shell around them:
@@ -15,7 +16,9 @@
  * - the six workflow commands forward to `/skill:relay-*` with their arguments,
  *   with completion of feature directories;
  * - /relay-status renders a card in the transcript that the LLM never sees;
- * - the footer shows the current feature by stage, with task progress while
+ * - /relay-done writes `status: shipped` into the plan, which nothing else does;
+ *   a shipped feature leaves the footer;
+ * - the footer shows the current feature (never a shipped one) by stage, with task progress while
  *   implementing:  🔨 relay csv-export ▰▰▰▱▱▱▱▱ 3/8 · T4 Export button · 6m
  *   and turns yellow, then red, when no step has been ticked for a while
  *   although the agent is working (⏳ stalled 18m);
@@ -33,7 +36,7 @@
  * in the package manifest (`pi.subagents.agents`), next to these skills in agents/.
  */
 
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
@@ -43,6 +46,7 @@ import {
 	currentTask,
 	displayName,
 	type Feature,
+	findFeature,
 	listFeatures,
 	nextStep,
 	phase,
@@ -50,6 +54,7 @@ import {
 	progressBar,
 	RELAY_DIR,
 	STAGE_ICON,
+	setFrontmatterValue,
 	type Stage,
 	stage,
 	stageLabel,
@@ -363,6 +368,58 @@ export default function relay(pi: ExtensionAPI) {
 				})),
 			};
 			pi.appendEntry(CARD_TYPE, data);
+		},
+	});
+
+	pi.registerCommand("relay-done", {
+		description: "Mark a feature shipped once its merge request is merged; it leaves the footer",
+		getArgumentCompletions: (prefix) => completions("plans", prefix),
+		handler: async (args, ctx) => {
+			await refresh(ctx);
+			if (!root) {
+				ctx.ui.notify("relay: not inside a git repository", "warning");
+				return;
+			}
+			const features = listFeatures(root);
+			const name = args.trim();
+			const feature = name ? findFeature(features, name) : pickCurrent(features, await currentBranch(root));
+			if (!feature) {
+				ctx.ui.notify(name ? `relay: no feature named ${name}` : "relay: no open feature to mark shipped", "warning");
+				return;
+			}
+			const label = displayName(feature.slug);
+			const dir = featurePath(feature);
+			if (!feature.hasPlan) {
+				ctx.ui.notify(`relay: ${label} has no plan.md to mark shipped. To drop it, remove ${dir}`, "warning");
+				return;
+			}
+			const before = stage(feature);
+			if (before === "shipped") {
+				ctx.ui.notify(`relay: ${label} is already shipped`, "info");
+				return;
+			}
+			// Only `in-review` has a merge request; anything earlier is unfinished work, so ask.
+			if (before !== "in-review" && ctx.hasUI) {
+				const total = feature.tasks.length;
+				const progress = total ? ` (${tasksDone(feature)}/${total} tasks done)` : "";
+				const ok = await ctx.ui.confirm(
+					`Mark ${label} shipped?`,
+					`Its plan is still "${phase(feature)}"${progress} and names no merge request.`,
+				);
+				if (!ok) return;
+			}
+			const planPath = join(feature.dir, "plan.md");
+			try {
+				writeFileSync(planPath, setFrontmatterValue(readFileSync(planPath, "utf8"), "status", "shipped"));
+			} catch (error) {
+				ctx.ui.notify(`relay: could not update ${join(dir, "plan.md")}: ${error instanceof Error ? error.message : error}`, "error");
+				return;
+			}
+			await refresh(ctx);
+			ctx.ui.notify(
+				`relay: ${label} marked shipped (was ${phase(feature)}). To reopen it, set status back in ${join(dir, "plan.md")}`,
+				"info",
+			);
 		},
 	});
 

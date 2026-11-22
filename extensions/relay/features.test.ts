@@ -7,6 +7,7 @@ import {
 	countChecks,
 	currentTask,
 	displayName,
+	findFeature,
 	listFeatures,
 	mrLabel,
 	nextStep,
@@ -15,6 +16,7 @@ import {
 	parseTaskFile,
 	pickCurrent,
 	progressBar,
+	setFrontmatterValue,
 	stage,
 	statusLine,
 } from "./features.ts";
@@ -77,6 +79,34 @@ describe("parseFrontmatter", () => {
 	});
 	it("returns nothing without frontmatter", () => {
 		assert.deepEqual(parseFrontmatter("# Plan\nstatus: approved"), {});
+	});
+});
+
+describe("setFrontmatterValue", () => {
+	it("replaces the value and leaves the other lines alone", () => {
+		const text = doc(lines("status: in-review   # draft → approved", "branch: feat/a", "mr: https://x/1"), "status: body");
+		assert.equal(
+			setFrontmatterValue(text, "status", "shipped"),
+			doc(lines("status: shipped", "branch: feat/a", "mr: https://x/1"), "status: body"),
+		);
+	});
+	it("fills an empty key", () => {
+		assert.equal(setFrontmatterValue(doc(lines("status:", "mr:")), "status", "shipped"), doc(lines("status: shipped", "mr:")));
+	});
+	it("adds a missing key at the end of the frontmatter", () => {
+		assert.equal(setFrontmatterValue(doc("branch: feat/a"), "status", "shipped"), doc(lines("branch: feat/a", "status: shipped")));
+	});
+	it("adds frontmatter to a file without one", () => {
+		assert.equal(setFrontmatterValue("# Plan\nstatus: draft\n", "status", "shipped"), "---\nstatus: shipped\n---\n# Plan\nstatus: draft\n");
+	});
+	it("keeps CRLF line endings", () => {
+		const text = "---\r\nstatus: in-review\r\nmr:\r\n---\r\n# Plan\r\n";
+		assert.equal(setFrontmatterValue(text, "status", "shipped"), "---\r\nstatus: shipped\r\nmr:\r\n---\r\n# Plan\r\n");
+	});
+	it("is read back by parseFrontmatter", () => {
+		for (const text of [doc("status: implementing\nbranch: feat/a"), doc("branch: feat/a"), "# Plan"]) {
+			assert.equal(parseFrontmatter(setFrontmatterValue(text, "status", "shipped")).status, "shipped");
+		}
 	});
 });
 
@@ -261,11 +291,36 @@ describe("pickCurrent", () => {
 	it("falls back to the most recent unshipped feature", () => {
 		assert.equal(pickCurrent(features, "main")?.slug, "2026-01-02-b");
 	});
-	it("still shows a shipped feature when its branch is checked out", () => {
-		assert.equal(pickCurrent(features, "feat/c")?.slug, "2026-01-03-c");
+	it("skips a shipped feature even when its branch is checked out", () => {
+		assert.equal(pickCurrent(features, "feat/c")?.slug, "2026-01-02-b");
+		assert.equal(pickCurrent(features.filter((f) => f.planStatus === "shipped"), "feat/c"), undefined);
 	});
 	it("returns nothing when everything is shipped", () => {
 		assert.equal(pickCurrent(features.filter((f) => f.planStatus === "shipped"), "main"), undefined);
+	});
+});
+
+describe("findFeature", () => {
+	const features = listFeatures(
+		repo({
+			"2026-01-01-csv-export/plan.md": { text: doc("status: in-review"), age: 2 },
+			"2026-01-02-login/design.md": { text: doc("status: draft"), age: 1 },
+		}),
+	);
+	it("finds a feature by directory, by a file in it, by slug or by short name", () => {
+		for (const name of [
+			".relay/2026-01-01-csv-export",
+			"../.relay/2026-01-01-csv-export/",
+			".relay/2026-01-01-csv-export/plan.md",
+			"2026-01-01-csv-export",
+			"csv-export",
+		]) {
+			assert.equal(findFeature(features, name)?.slug, "2026-01-01-csv-export", name);
+		}
+	});
+	it("returns nothing for an unknown name", () => {
+		assert.equal(findFeature(features, "export"), undefined);
+		assert.equal(findFeature(features, ""), undefined);
 	});
 });
 
@@ -303,6 +358,12 @@ describe("formatting", () => {
 	it("suggests the next command", () => {
 		assert.equal(nextStep(approved, ".relay/pi"), "/relay-ship .relay/pi  ·  by hand: /relay-task .relay/pi");
 		assert.match(nextStep(implementing, ".relay/x"), /^\/relay-ship \.relay\/x .*\/relay-task \.relay\/x$/);
+	});
+	it("names relay-done once the merge request is open", () => {
+		assert.equal(
+			nextStep(mr, ".relay/mr"),
+			"MR: https://gitlab.example.com/x/-/merge_requests/123  ·  once merged: /relay-done .relay/mr",
+		);
 	});
 	it("offers only relay-ship once every task is done", () => {
 		assert.match(nextStep(review, ".relay/x"), /^\/relay-ship \.relay\/x/);

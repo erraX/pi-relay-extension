@@ -75,6 +75,24 @@ export function parseFrontmatter(text: string): Record<string, string> {
 	return out;
 }
 
+/**
+ * `text` with `key: value` in its frontmatter: the key's line is replaced
+ * (a trailing comment goes with it), a missing key is added as the last line,
+ * and a file without frontmatter gets one. Everything else stays byte for byte.
+ */
+export function setFrontmatterValue(text: string, key: string, value: string): string {
+	const eol = /\r\n/.test(text) ? "\r\n" : "\n";
+	const entry = `${key}: ${value}`;
+	const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
+	if (!match) return `---${eol}${entry}${eol}---${eol}${text}`;
+	const fmLines = match[1].split(/\r?\n/);
+	const at = fmLines.findIndex((line) => line.startsWith(`${key}:`));
+	if (at >= 0) fmLines[at] = entry;
+	else fmLines.push(entry);
+	const start = match[0].indexOf("\n") + 1;
+	return text.slice(0, start) + fmLines.join(eol) + text.slice(start + match[1].length);
+}
+
 /** Lines outside fenced code blocks (plans contain example code with checkboxes and headings). */
 function* proseLines(text: string): Generator<string> {
 	let fence: string | undefined;
@@ -286,16 +304,26 @@ export function phase(f: Feature): string {
 const finished = (f: Feature) => f.planStatus === "shipped";
 
 /**
- * The feature the session is working on: the one whose plan names the current
- * branch, else the most recently touched one that is not shipped (planning
- * happens before a branch exists).
+ * The feature the session is working on, among those not shipped: the one
+ * whose plan names the current branch, else the most recently touched one
+ * (planning happens before a branch exists). A shipped feature is never
+ * current, not even on its own branch.
  */
 export function pickCurrent(features: Feature[], branch: string | undefined): Feature | undefined {
-	if (branch) {
-		const onBranch = features.find((f) => f.branch === branch);
-		if (onBranch) return onBranch;
-	}
-	return features.find((f) => !finished(f));
+	const open = features.filter((f) => !finished(f));
+	return (branch && open.find((f) => f.branch === branch)) || open[0];
+}
+
+/**
+ * The feature a command argument names: its directory (`.relay/<slug>`, from
+ * anywhere), a file in that directory, the slug, or the slug without its date.
+ */
+export function findFeature(features: Feature[], name: string): Feature | undefined {
+	const parts = name.trim().split(/[\\/]+/).filter(Boolean);
+	if (parts.length > 1 && /\.md$/i.test(parts[parts.length - 1])) parts.pop();
+	const last = parts.pop();
+	if (!last) return undefined;
+	return features.find((f) => f.slug === last) ?? features.find((f) => displayName(f.slug) === last);
 }
 
 export const STAGE_ICON: Record<Stage, string> = {
@@ -372,7 +400,7 @@ export function nextStep(f: Feature, path: string): string {
 		case "reviewing":
 			return `/relay-ship ${path}  (resumes at the first unticked step)`;
 		case "in-review":
-			return f.mr ? `MR: ${f.mr}` : "MR open";
+			return `${f.mr ? `MR: ${f.mr}` : "MR open"}  ·  once merged: /relay-done ${path}`;
 		case "shipped":
 			return "done";
 	}

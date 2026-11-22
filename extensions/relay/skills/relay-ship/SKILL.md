@@ -182,6 +182,8 @@ Report in a few lines:
   no rule covers; the user decides whether each becomes a rule
 - Anything deferred, pushed back, or decided during ship that the user should
   look at
+- That `/relay-done <feature dir>` marks the feature shipped once the merge
+  request is merged; until then it stays `in-review` and in the footer
 
 ## Stop conditions
 
