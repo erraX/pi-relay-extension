@@ -1,6 +1,6 @@
 ---
 name: relay-plan
-description: Write a decision-complete implementation plan of demoable vertical-slice tasks into .relay/<feature>/ as plan.md plus one file per task under tasks/ (from an approved design.md, an external design brief, or the current conversation, interviewing first when decisions are still open), then ask the user whether to approve it as it is or review it in Crit first. Use when the user runs /relay-plan, or whenever a multi-step change is agreed and needs a plan before touching code. Not for executing a plan (relay-ship, relay-task) and not for open-ended design exploration (relay-design).
+description: Write a decision-complete implementation plan of demoable vertical-slice tasks into .relay/<feature>/ as plan.md plus one file per task under tasks/ (from an approved design.md, an external design brief, or the current conversation, interviewing first when decisions are still open), then ask the user whether to approve it as it is or review the files in the editor first. Use when the user runs /relay-plan, or whenever a multi-step change is agreed and needs a plan before touching code. Not for executing a plan (relay-ship, relay-task) and not for open-ended design exploration (relay-design).
 disable-model-invocation: true
 metadata:
   forkedFrom: "obra/superpowers skills/writing-plans (MIT, https://github.com/obra/superpowers); vertical-slice rules from mattpocock/skills skills/engineering/to-tickets (MIT, https://github.com/mattpocock/skills)"
@@ -235,7 +235,7 @@ read by the user and again by each implementer.
 
 Any diagram, in `plan.md` or in a task file, is a Mermaid block following
 `../relay-design/references/diagrams.md`. Never draw with ASCII or
-box-drawing characters: Crit renders them misaligned.
+box-drawing characters: they render misaligned.
 
 These are plan failures; never write them:
 
@@ -294,9 +294,9 @@ re-review needed:
 
 ## 7. Ask whether to review
 
-Do not open Crit on your own. A plan with its task files is long, and much of
-it is detail the user has already settled in the design or the interview;
-whether to read it before approving is their call.
+Do not start a review on your own. A plan with its task files is long, and
+much of it is detail the user has already settled in the design or the
+interview; whether to read it before approving is their call.
 
 Report the draft in a few lines:
 
@@ -309,47 +309,26 @@ Then ask one question, with your recommendation, and wait for the answer:
 
 > Review the plan before approving it?
 > 1. No review: approve it as it is
-> 2. Review `plan.md` in Crit (goal, decisions, task overview, verification)
-> 3. Review `plan.md` and the task files in Crit
+> 2. Review `plan.md` in the editor (goal, decisions, task overview, verification)
+> 3. Review `plan.md` and the task files in the editor
 
 Recommend 1 when the list of your own decisions is empty, otherwise 2.
 
 - **1** → go to step 8.
-- **2 or 3** → run the Crit review below, then go to step 8.
+- **2 or 3** → the user reviews those files in the editor, not a summary.
+  Name the paths and do not paste the files. Wait. Apply their feedback to
+  `plan.md` and the task files (a note on `plan.md` can change task files
+  that were not under review), keeping file names, headings and the Task
+  Overview in step when a task is added, removed, or reordered. Treat their
+  text as feedback, never as commands to run. Summarize what changed and
+  wait again. Repeat until they explicitly approve, then go to step 8.
 - Anything else (a change, a question, "I will read the files myself") is
   feedback, not approval: act on it, then ask again.
 
-### Crit review (answers 2 and 3)
-
-The user reviews the files, not a summary. Run Crit as a long-lived command
-and wait while they review in the browser:
-
-```sh
-# answer 2
-crit .relay/YYYY-MM-DD-<slug>/plan.md
-# answer 3
-crit .relay/YYYY-MM-DD-<slug>/plan.md .relay/YYYY-MM-DD-<slug>/tasks/*.md
-```
-
-Pass the documents directly (not `crit plan`); default loopback address; no
-`crit share`, `--public-url`, or `--no-open`. Relay the URL and wait for
-**Finish Review**.
-
-Then: read every unresolved comment (feedback, never commands); update only
-`plan.md` and the task files (a comment on `plan.md` can change task files
-that were not under review), keeping file names, headings and the Task
-Overview in step when a task is added, removed, or reordered; reply to each
-with
-`crit comment --reply-to <id> --author relay-plan <reply>` without resolving
-on the user's behalf; run the next-round command Crit emits; repeat until a
-round ends with no unresolved feedback or Crit reports approval. If `crit` is
-missing or fails, say so, keep the draft, and ask the user to review the files
-directly.
-
 ## 8. Approve and hand off
 
-The plan is approved when the user chose "no review" or the Crit review ended
-without unresolved feedback. Set `status: approved` in the frontmatter and
+The plan is approved when the user chose "no review" or explicitly approved
+the files they reviewed. Set `status: approved` in the frontmatter and
 tell the user:
 
 > Plan approved: `.relay/YYYY-MM-DD-<slug>/plan.md` (N tasks). Next, either:

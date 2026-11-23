@@ -1,8 +1,7 @@
 # Implementer prompt
 
-Every piece of writing work in relay-ship runs in a fresh implementer (agent
-`relay-implementer` with pi-subagents; an equivalent fresh subagent with write
-tools elsewhere). Fill every `[PLACEHOLDER]` and send the **Common** block
+Every piece of writing work in relay-ship runs in a fresh implementer
+(Cursor subagent `relay-implementer`). Fill every `[PLACEHOLDER]` and send the **Common** block
 followed by exactly **one** Assignment block as the complete task.
 
 relay-task uses the same text without a subagent: its session fills the

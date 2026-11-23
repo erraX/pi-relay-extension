@@ -81,8 +81,8 @@ options and why. This is what the reviewer checks the implementation against.]
 
 Frontmatter fields:
 
-- `status`: `draft` → `approved` (the user approved it, with or without a
-  Crit review) → `implementing` → `in-review`
+- `status`: `draft` → `approved` (the user approved it, with or without
+  reading the files first) → `implementing` → `in-review`
   (merge request open) → `shipped` (merged). relay-plan owns the first two
   transitions, relay-ship the next two; the user sets `shipped` with
   `/relay-done` after the merge.
@@ -107,7 +107,7 @@ in the skill.
   is the task name in short kebab-case. relay-ship runs the files in file-name
   order.
 - **First line**: `# Task N: [Slice name]`, the same number and name.
-- The relay footer and `/relay-status` read progress from these files: the
+- `/relay-status` reads progress from these files: the
   number from the file name, the name from the heading, the steps from the
   checkboxes. Keep those forms exactly, and use checkboxes for steps only.
 - When feedback adds, removes, or reorders a task, rename the files so the

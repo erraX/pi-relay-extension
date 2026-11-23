@@ -1,6 +1,6 @@
 /**
- * Width-aware layout for the task strip, kept free of TUI and theme imports so
- * it can be tested. The extension colours each segment by its kind.
+ * Width-aware layout for the task chips `/relay-status` prints, kept free of
+ * any UI toolkit so it can be tested.
  *
  *   ✓T1 ✓T2 ✓T3 ●T4 ○T5 ○T6        everything fits
  *   ✓T1–T12 ●T13 ○T14 ○T15 ○+25     too many tasks for the width

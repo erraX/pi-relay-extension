@@ -1,8 +1,7 @@
 # Reviewer prompt
 
 Fill every `[PLACEHOLDER]` and send the block below as the complete task of a
-fresh reviewer (agent `relay-reviewer` with pi-subagents; an equivalent fresh,
-read-only subagent elsewhere). Send only this: no session history, no opinion
+fresh reviewer (Cursor subagent `relay-reviewer`). Send only this: no session history, no opinion
 about what it will find, no list of things not to flag. The reviewer's value is
 that it has not seen the implementation happen.
 

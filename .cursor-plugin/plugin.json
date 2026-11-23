@@ -1,0 +1,15 @@
+{
+  "name": "relay",
+  "version": "0.1.0",
+  "description": "Design, plan, and ship a feature in Cursor: an approved design, vertical-slice tasks, a fresh implementer per task, a fresh review, and a draft merge request.",
+  "author": {
+    "name": "erraX"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/erraX/pi-relay-extension",
+  "keywords": ["workflow", "sdlc", "planning", "review"],
+  "skills": "./skills",
+  "agents": "./agents",
+  "commands": "./commands",
+  "hooks": "./hooks/hooks.json"
+}

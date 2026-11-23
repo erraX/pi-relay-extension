@@ -21,8 +21,8 @@ detected, and write two files. Keep the whole thing short.
 - Confirm you are inside a git repository: `git rev-parse --show-toplevel`.
   Everything below is relative to that root.
 - Check tools and report missing ones without installing anything:
-  `crit` (used by relay-design and relay-plan for review) and `glab` (used by
-  relay-ship to open the merge request). Missing tools do not block init.
+  `glab` or `gh` (relay-ship opens the draft merge request with whichever
+  the repository uses). A missing client does not block init.
 - If `.relay/config.json` already exists, read it: its values become the
   defaults for every question below, and you tell the user you are updating an
   existing config.
@@ -52,12 +52,13 @@ sensible answer.
    what the reviewer treats as evidence, so they should be the real gate for
    this repo, not a subset.
 2. **Models** — `models.reviewer` runs the fresh-context code review in
-   relay-ship and deserves the strongest tier the user has; `models.implementer`
-   runs the fresh implementer subagents relay-ship dispatches for each task,
-   the verification pass and the fix passes.
-   Explain that `null` means "inherit the session's model", that a value is a
-   provider/model id as pi shows it, and that a `:high`-style suffix sets the
-   thinking level. Show the current values and accept the user's answer.
+   relay-ship and deserves the strongest model the user wants on that pass;
+   `models.implementer` runs the fresh implementer subagents relay-ship
+   dispatches for each task, the verification pass and the fix passes.
+   `null` means the subagent inherits the session's model. A value is a
+   Cursor model id the Task tool accepts. Show the current values and accept
+   the user's answer. If a later dispatch rejects the id, relay-ship omits it
+   and says so.
 3. **Review rounds** — only if the user seems to want it; otherwise keep
    `review.maxRounds` at 2 and mention it in the summary. Two rounds means one
    review, one fix pass, one re-review; more rounds rarely converge and cost a

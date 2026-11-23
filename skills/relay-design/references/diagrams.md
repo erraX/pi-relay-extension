@@ -3,7 +3,7 @@
 Every diagram in a relay document (`design.md`, `plan.md`, merge request
 descriptions) is a Mermaid block. Never draw with ASCII or box-drawing
 characters (`┌─┐`, `│`, `──▶`, `+--+`): they line up only in one font, and
-Crit, GitLab and most viewers render them misaligned. Wide glyphs such as
+GitLab, Cursor and most viewers render them misaligned. Wide glyphs such as
 `→`, `▶` and `⌘` break alignment even in monospace.
 
 Draw a diagram only when it says something prose cannot say as quickly:
@@ -26,15 +26,15 @@ Use only these five. Newer types (`architecture-beta`, `block-beta`,
 numbered steps between boxes is almost always a `sequenceDiagram`, not a
 flowchart.
 
-## Syntax rules (Crit and GitLab)
+## Syntax rules (GitLab and Cursor)
 
-Crit renders a block as a diagram only when it is a top-level fenced block
-whose info string is exactly `mermaid`; it uses Mermaid 11 with the default
-`strict` security level and its own light/dark theme. GitLab renders the same
-block. To stay inside what both accept:
+A block renders as a diagram when it is a top-level fenced block whose info
+string is exactly `mermaid`. GitLab's Mermaid is older and uses a strict
+security level; Cursor's preview is stricter about the fence than about the
+theme. Stay inside what both accept:
 
 - Fence it as ` ```mermaid ` at the top level of the document, unindented.
-  Inside a list item, blockquote or another fence, Crit does not render it.
+  Inside a list item, blockquote or another fence, viewers skip it.
 - Quote every label that contains anything beyond letters, digits and spaces:
   `api["POST /runs/:r/steers"]`, `-->|"2 s poll"|`. Unquoted `( ) [ ] { } : ;
   / < > # & |` break the flowchart parser. Inside quotes, write a double quote
@@ -43,13 +43,11 @@ block. To stay inside what both accept:
   as an id (`End` is fine), and put a space on both sides of every arrow
   (`a --> b`): `a---ob` reads as a circle-ended edge to `b`.
 - No `%%{init: …}%%` directives, `classDef`/`style` colours, `click` handlers,
-  HTML, or Markdown-string labels: they fight Crit's theme or are stripped by
-  the strict security level. A line break inside a label is `<br/>`, nothing
-  else.
+  HTML, or Markdown-string labels: strict security levels strip them. A line
+  break inside a label is `<br/>`, nothing else.
 - Keep one diagram to about 15 nodes or participants; split a larger one.
-  Crit shows a Mermaid block as one unit, so a reviewer can comment on the
-  diagram but not on a line of it: put the decisions in the prose around it,
-  where they can be commented on.
+  A diagram is one picture. Put the decisions in the prose around it, where
+  a reviewer can answer a specific line.
 
 ## Examples
 
@@ -94,6 +92,5 @@ flowchart LR
 
 For each diagram: the fence is exactly ` ```mermaid ` at the top level; every
 label with punctuation is quoted; no `end` id and no `;` in labels; the type is
-one of the five above; about 15 nodes or fewer. Crit shows "Syntax error in
-text" in place of a diagram that does not parse, so a broken diagram is a
-review finding like any other.
+one of the five above; about 15 nodes or fewer. A diagram that does not
+parse is a review finding like any other.

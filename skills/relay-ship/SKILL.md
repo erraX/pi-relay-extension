@@ -63,15 +63,19 @@ Every implementer runs the same way:
 1. Record `START_SHA=$(git rev-parse HEAD)`.
 2. Fill `references/implementer-prompt.md`: its Common block plus exactly one
    Assignment block (task, verification, or fix), with absolute paths.
-3. Dispatch it with the filled prompt as its whole task. With pi-subagents:
-   `subagent({ agent: "relay-implementer", task: <prompt> })`, adding
-   `model: <models.implementer>` when the config sets one. On another runtime,
-   use its fresh subagent with write tools and the same prompt. If no subagent
-   mechanism exists, say so and stop; implementing the plan in this session is
-   what this skill exists to avoid. The user can still implement the tasks
-   one per session with `/relay-task`.
-4. Wait for it to finish. One subagent at a time; do not touch the working
-   tree, the index, or the branch while it runs.
+3. Dispatch it with the filled prompt as its whole task, using Cursor's Task
+   tool. `subagent_type` is `relay-implementer`. The prompt is the filled text
+   and nothing else. Pass `model` when `models.implementer` is a non-null
+   string; otherwise omit `model` so the subagent inherits this session's
+   model. If the Task tool rejects that model id, omit `model`, say so once,
+   and continue. One subagent at a time, in the foreground: do not set
+   `run_in_background`, and do not touch the working tree while it runs. If
+   `relay-implementer` is not an available subagent type, stop and say the
+   relay plugin's agents are not loaded. Implementing the plan in this
+   session is what this skill exists to avoid. The user can still implement
+   the tasks one per session with `/relay-task`.
+4. Wait for it to finish before reading its result or dispatching anything
+   else. Do not touch the working tree, the index, or the branch while it runs.
 5. Read its final message: the `Status:` / `Commits:` / `Notes:` lines, plus
    the report above them when the status is not `done`. Do not pull its diff,
    test output, or the notes into this session; they would undo the point of
@@ -122,12 +126,12 @@ Each round `N` (starting at 1):
 2. Fill `references/reviewer-prompt.md` with the absolute paths, shas, round
    number, report path `reviews/round-N.md`, and the previous round's report
    (or `none`).
-3. Dispatch a fresh reviewer with the filled prompt as its whole task. With
-   pi-subagents: `subagent({ agent: "relay-reviewer", task: <prompt> })`,
-   adding `model: <models.reviewer>` when the config sets one. On another
-   runtime, use its fresh, read-only subagent with the same prompt. If no
-   subagent mechanism exists, say so and stop; a self-review is not what the
-   user asked for.
+3. Dispatch a fresh reviewer the same way: Task tool, `subagent_type`
+   `relay-reviewer`, the filled prompt as its whole task, `model` from
+   `models.reviewer` when that value is a non-null string. The reviewer
+   writes only the report file; its prompt forbids every other write. If
+   `relay-reviewer` is not available, stop. A review by this session is not
+   what the user asked for.
 4. Wait for the reviewer's completion. Do not change the branch while it
    runs. Its final message carries `Ready to merge: Yes | No | With fixes`,
    the report path, and the counts.
@@ -183,13 +187,14 @@ Report in a few lines:
 - Anything deferred, pushed back, or decided during ship that the user should
   look at
 - That `/relay-done <feature dir>` marks the feature shipped once the merge
-  request is merged; until then it stays `in-review` and in the footer
+  request is merged; until then it stays `in-review` and `/relay-status`
+  keeps listing it
 
 ## Stop conditions
 
 Stop and report (do not work around) when: the plan is not approved or the
-config is missing; tracked files have uncommitted changes; no subagent
-mechanism exists; an implementer reports `blocked` (plan conflict, three
+config is missing; tracked files have uncommitted changes;
+`relay-implementer` or `relay-reviewer` is not available; an implementer reports `blocked` (plan conflict, three
 strikes on the same failing test, a pre-existing untracked file in the way,
 a fix outside the plan's scope, a check the environment will not let run); an implementer's result fails the checks
 twice; the review is not `Yes` after the last allowed round; opening the merge

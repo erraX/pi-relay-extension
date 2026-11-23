@@ -2,10 +2,9 @@
  * Read relay feature state from `.relay/<feature>/`: `design.md`, `plan.md`
  * and one file per task in `tasks/`.
  *
- * Pure apart from synchronous reads of the `.relay` directory, so the extension
- * (footer, task strip, /relay-status, argument completion) and the tests share
- * one parser. The skills own the file format; this reads the frontmatter and
- * the `## Verification` checklist of the plan and the checkboxes of each
+ * Pure apart from synchronous reads of the `.relay` directory, so the status
+ * command and the tests share one parser. The skills own the file format; this
+ * reads the frontmatter and the `## Verification` checklist of the plan and the checkboxes of each
  * `tasks/NN-<slug>.md`, and tolerates anything it does not recognise. Plans
  * written before tasks had their own files keep them as `### Task N:` sections
  * inside `plan.md`; those are read when there is no task file.
@@ -363,7 +362,7 @@ export function mrLabel(mr: string | undefined): string | undefined {
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** What follows the name in the footer, without colours. */
+/** What follows the name in a status line. */
 export function stageLabel(f: Feature): string {
 	const s = stage(f);
 	const n = f.tasks.length;
@@ -398,7 +397,7 @@ export function verifyLabel(f: Pick<Feature, "verification" | "manual">): string
 	return `verify ${f.verification.done}/${f.verification.total}${open > 0 ? ` · ${open} manual` : ""}`;
 }
 
-/** Footer text without colours: `🔨 csv-export · ▰▰▰▱▱▱▱▱ 3/8 · T4 Export button`. */
+/** Status text: `🔨 csv-export · ▰▰▰▱▱▱▱▱ 3/8 · T4 Export button`. */
 export function statusLine(f: Feature): string {
 	return `${STAGE_ICON[stage(f)]} ${displayName(f.slug)} · ${stageLabel(f)}`;
 }
