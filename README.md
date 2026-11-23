@@ -5,7 +5,7 @@ idea → design → plan → fresh-context implementation per task (by subagents
 
 This branch is the Cursor plugin. The pi extension stays on `main`.
 
-The workflow itself is a set of Agent Skills. The plugin is the shell around them: slash commands, the `relay-implementer` and `relay-reviewer` subagents, and a status line read from disk.
+The workflow itself is a set of Agent Skills, and those skills are the slash entries (`/relay-init`, `/relay-design`, and the rest). `/relay-status` and `/relay-done` are commands, because they only run a local script. The plugin also adds the `relay-implementer` and `relay-reviewer` subagents, and a status line read from disk.
 
 ```
 🔨 2026-01-02-csv-export  ▰▰▰▱▱▱▱▱ 3/8 · T4 Export button
@@ -64,7 +64,7 @@ A plan written before tasks had their own files (`### Task N:` sections inside `
 
 Copy this repository into `~/.cursor/plugins/local/relay`, so that `.cursor-plugin/plugin.json` sits directly inside that folder. Cursor skips a symlink whose target lives outside `~/.cursor/plugins/local`. Then run **Developer: Reload Window**.
 
-The commands, skills, and the two subagents show up under Customize. On a Team or Enterprise account, an admin has to allow local plugin imports; otherwise Cursor ignores the folder.
+The skills, `/relay-status`, `/relay-done`, and the two subagents show up under Customize. On a Team or Enterprise account, an admin has to allow local plugin imports; otherwise Cursor ignores the folder.
 
 `/relay-ship` dispatches `relay-implementer` and `relay-reviewer` with the Task tool, one at a time. If those subagent types are missing, it stops.
 
@@ -78,7 +78,7 @@ The commands, skills, and the two subagents show up under Customize. On a Team o
 
 ```
 .cursor-plugin/plugin.json
-commands/                 slash commands; each one follows the matching skill
+commands/                 /relay-status and /relay-done; the other slash entries are the skills
 skills/relay-*/           the workflow
 skills/relay-design/scripts/distill-ui.mjs   screenshots and measurements of a visual reference
 skills/relay-design/scripts/check-ui.mjs     the contract's checks, side-by-side images
